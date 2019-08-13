@@ -42,17 +42,7 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             throw new \Exception('In Bitpay_Core_Model_Method_Bitcoin::authorize(): missing payment or amount parameters.');
         }
 
-        if ($iframe === false) {
-            $amount = $payment->getOrder()->getQuote()->getGrandTotal();
-        }
-
-        // This means that this authorize method was called from a Magento checkout controller
-        // and not the iframe.phtml template while this plugin is in non-redirected checkout mode,
-        // therefore we shouldn't create a new invoice, we should just return the model
-        if ((!Mage::getStoreConfig('payment/bitpay/fullscreen') && $iframe === false)
-            || (Mage::getStoreConfig('payment/bitpay/fullscreen') && $iframe === true)) {
-            return $this;
-        }
+        $amount = $payment->getOrder()->getQuote()->getGrandTotal();
 
         $this->debugData('[INFO] Bitpay_Core_Model_Method_Bitcoin::authorize(): authorizing new order.');
 
@@ -82,7 +72,7 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             )
         );
 
-        $quote = Mage::getSingleton('checkout/session')->getQuote();
+        $quote = \Mage::getSingleton('checkout/session')->getQuote();
         $order = \Mage::getModel('sales/order')->load($quote->getId(), 'quote_id');
 
         // Save BitPay Invoice in database for reference
@@ -266,15 +256,8 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
         $quote = Mage::getSingleton('checkout/session')->getQuote();
         $order = \Mage::getModel('sales/order')->load($quote->getId(), 'quote_id');
 
-        if (Mage::getStoreConfig('payment/bitpay/fullscreen')) {
-            $invoice->setOrderId($order->getIncrementId());
-            $invoice->setPosData(json_encode(array('orderId' => $order->getIncrementId())));
-        } else {
-            $invoice->setOrderId($quote->getId());
-            $invoice->setPosData(json_encode(array('quoteId' => $quote->getId())));
-            $convertQuote = Mage::getSingleton('sales/convert_quote');
-            $order = $convertQuote->toOrder($quote);
-        }
+        $invoice->setOrderId($order->getIncrementId());
+        $invoice->setPosData(json_encode(array('orderId' => $order->getIncrementId())));
 
         $invoice = $this->addCurrencyInfo($invoice, $order);
         $invoice = $this->addPriceInfo($invoice, $amount);

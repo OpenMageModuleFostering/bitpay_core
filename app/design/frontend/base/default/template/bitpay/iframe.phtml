@@ -18,7 +18,7 @@ switch($url) {
         echo 'Error creating invoice.  Please try again or try another payment solution.';
         break;
     default:
-        echo '<iframe class="bitpay_invoice_iframe" src="'.$url.'" style="width:500px; height:150px; overflow:hidden; border:none; margin:auto; display:none;" scrolling="no" allowtransparency="true" frameborder="0"> </iframe>';
+        echo '<div class="bitpay_invoice_div" style="display:none; width:100%;"></div>';
         break;
 }
 $quoteId = $this->getQuote()->getId();
@@ -31,7 +31,7 @@ if ($request->getScheme() == 'https') {
 ?>
 <script type="text/javascript">
 //<![CDATA[
-if ($$('iframe.bitpay_invoice_iframe').length > 0) {
+if ($$('div.bitpay_invoice_div').length > 0) {
   var bpListener = {
     nextStep: function(transport) {
       if (transport && transport.responseText) {
@@ -42,17 +42,21 @@ if ($$('iframe.bitpay_invoice_iframe').length > 0) {
           response = {};
         }
         if (response.success) {
-          $$('iframe.bitpay_invoice_iframe')[0].setStyle({display:'block'});
           $$('button.btn-checkout')[0].setStyle({display:'none'});
+          var invoice_div = $$('div.bitpay_invoice_div')[0];
+          invoice_div.setStyle({display:'block'});
+          invoice_div.innerHTML = '<iframe class="bitpay_invoice_iframe" src="' + response.redirect + '" style="width:500px; height:150px; overflow:hidden; border:none; display:block; margin:auto; scrolling="no" allowtransparency="true" frameborder="0"></iframe>';
           var ipnPoller = new PeriodicalExecuter(function() {
             new Ajax.Request("<?php echo $url . '?quote=' . $quoteId; ?>",
-              {
-                asynchronous: true,
-                evalScripts: true,
-                onComplete: function(request, json) {
+            {
+              asynchronous: true,
+              evalScripts: true,
+              onComplete: function(request) {
                 var data = request.responseText.evalJSON();
                 if (data.paid) {
                   ipnPoller.stop();
+                  response.redirect = null;
+                  transport.responseText = JSON.stringify(response);
                   review.nextStep(transport);
                 }
               }

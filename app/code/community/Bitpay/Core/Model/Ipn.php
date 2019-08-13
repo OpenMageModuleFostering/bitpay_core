@@ -29,11 +29,18 @@ class Bitpay_Core_Model_Ipn extends Mage_Core_Model_Abstract
             return false;
         }
 
-        $quote = Mage::getModel('sales/quote')->load($quoteId, 'entity_id');
+        $order = \Mage::getModel('sales/order')->load($quoteId, 'quote_id');
 
-        if (!$quote)
-        {
-        	Mage::log('quote not found', Zend_Log::WARN, 'bitpay.log');
+        if (false === isset($order) || true === empty($order)) {
+            \Mage::helper('bitpay')->debugData('[DEBUG] Bitpay_Core_Model_Ipn::GetStatusReceived(), order not found for quoteId' . $quoteId);
+            return false;
+        }
+
+
+        $orderId = $order->getIncrementId();
+
+        if (false === isset($orderId) || true === empty($orderId)) {
+            \Mage::helper('bitpay')->debugData('[DEBUG] Bitpay_Core_Model_Ipn::GetStatusReceived(), orderId not found for quoteId' . $quoteId);
             return false;
         }
 
@@ -41,7 +48,7 @@ class Bitpay_Core_Model_Ipn extends Mage_Core_Model_Abstract
 
         foreach ($collection as $i)
         {
-            if ($quoteId == json_decode($i->pos_data, true)['quoteId']) {
+            if ($orderId == json_decode($i->pos_data, true)['orderId']) {
                 if (in_array($i->status, $statuses)) {
                     return true;
                 }

@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Bitpay_Core",
+    "type": "magento-module",
+    "license": "MIT",
+    "homepage": "",
+    "description": "",
+    "authors": [
+    {
+        "name": "Joshua Estes",
+        "email": "josh@bitpay.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

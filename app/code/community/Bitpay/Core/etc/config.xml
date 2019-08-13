@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
+ */
+ -->
+<config>
+    <modules>
+        <Bitpay_Core>
+            <version>2.0.0</version>
+        </Bitpay_Core>
+    </modules>
+
+    <frontend>
+        <routers>
+            <bitpay>
+                <use>standard</use>
+                <args>
+                    <module>Bitpay_Core</module>
+                    <frontName>bitpay</frontName>
+                </args>
+            </bitpay>
+        </routers>
+        <layout>
+            <updates>
+                <bitpay>
+                    <file>bitpay.xml</file>
+                </bitpay>
+            </updates>
+        </layout>
+        <translate>
+            <modules>
+                <bitpay>
+                    <files>
+                        <default>Bitpay_Core.csv</default>
+                    </files>
+                </bitpay>
+            </modules>
+        </translate>
+    </frontend>
+
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <modules>
+                        <bitpay before="Mage_Adminhtml">Bitpay_Core_Adminhtml</bitpay>
+                    </modules>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
+
+    <global>
+        <!--
+        <events>
+            <controller_front_init_routers>
+                <observers>
+                    <bitpay_core_model_observer>
+                        <type>singleton</type>
+                        <class>Bitpay_Core_Model_Observer</class>
+                        <method>checkForRequest</method>
+                    </bitpay_core_model_observer>
+                </observers>
+            </controller_front_init_routers>
+        </events>
+        -->
+        <blocks>
+            <bitpay>
+                <class>Bitpay_Core_Block</class>
+            </bitpay>
+        </blocks>
+        <helpers>
+            <bitpay>
+                <class>Bitpay_Core_Helper</class>
+            </bitpay>
+        </helpers>
+
+        <models>
+            <bitpay>
+                <class>Bitpay_Core_Model</class>
+                <resourceModel>bitpay_mysql4</resourceModel>
+            </bitpay>
+            <bitpay_mysql4>
+                <class>Bitpay_Core_Model_Mysql4</class>
+                <entities>
+                    <invoice>
+                        <table>bitpay_invoices</table>
+                    </invoice>
+                    <ipn>
+                        <table>bitpay_ipns</table>
+                    </ipn>
+                </entities>
+            </bitpay_mysql4>
+        </models>
+
+        <resources>
+            <bitpay_write>
+                <connection>
+                    <use>core_write</use>
+                </connection>
+            </bitpay_write>
+            <bitpay_read>
+                <connection>
+                    <use>core_read</use>
+                </connection>
+            </bitpay_read>
+            <bitpay_setup>
+                <setup>
+                    <module>Bitpay_Core</module>
+                    <class>Bitpay_Core_Model_Resource_Mysql4_Setup</class>
+                </setup>
+                <connection>
+                    <use>core_setup</use>
+                </connection>
+            </bitpay_setup>
+        </resources>
+    </global>
+
+    <default>
+        <payment>
+            <bitpay>
+                <model>bitpay/paymentMethod</model>
+                <order_status>new</order_status>
+                <payment_action>authorize</payment_action>
+                <active>0</active>
+                <title>Bitcoin</title>
+                <network>testnet</network>
+                <debug>0</debug>
+                <notification_url>bitpay/ipn</notification_url>
+                <redirect_url>checkout/onepage/success</redirect_url>
+                <speed>medium</speed>
+                <invoice_new>new</invoice_new>
+                <invoice_paid>processing</invoice_paid>
+                <invoice_confirmed>processing</invoice_confirmed>
+                <invoice_complete>complete</invoice_complete>
+                <invoice_expired>canceled</invoice_expired>
+                <invoice_invalid>canceled</invoice_invalid>
+            </bitpay>
+        </payment>
+    </default>
+</config>

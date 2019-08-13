@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
+ */
+ -->
+ <config>
+    <!--
+    <menu>
+        <bitpay translate="title" module="bitpay">
+            <title>BitPay</title>
+            <sort_order>9999</sort_order>
+            <children>
+                <support module="bitpay">
+                    <title>Support</title>
+                    <action>adminhtml/bitpay/support</action>
+                </support>
+            </children>
+        </bitpay>
+    </menu>
+    -->
+    <acl>
+        <resources>
+            <admin>
+                <children>
+                    <bitpay translate="title" module="bitpay">
+                        <title>BitPay</title>
+                    </bitpay>
+                    <system>
+                        <children>
+                            <config>
+                                <children>
+                                    <bitpay translate="title" module="bitpay">
+                                        <title>BitPay Settings</title>
+                                    </bitpay>
+                                </children>
+                            </config>
+                        </children>
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+    <!--
+    <layout>
+        <updates>
+            <bitpay>
+                <file>bitpay.xml</file>
+            </bitpay>
+        </updates>
+    </layout>
+    -->
+    <translate>
+        <modules>
+            <bitpay>
+                <files>
+                    <default>Bitpay_Core.csv</default>
+                </files>
+            </bitpay>
+        </modules>
+    </translate>
+ </config>

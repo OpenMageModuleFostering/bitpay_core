@@ -1,0 +1,50 @@
+<?php 
+/**
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
+ */
+
+$url = $this->getIframeUrl();
+switch($url) {
+    case 'notbitpay':
+        break; // customer is using another payment method
+    case 'paid':
+        echo 'Order payment received.  Place Order to complete.';
+        break;
+    case 'disabled':
+        echo 'Please click Place Order to continue to bitpay.com.';
+        break;
+    case false:
+        echo 'Error creating invoice.  Please try again or try another payment solution.';
+        break;
+    default:
+        echo '<iframe src="'.$url.'" style="width:500px; height:150px; overflow:hidden; border:none; margin:auto; display:block;" scrolling="no" allowtransparency="true" frameborder="0"> </iframe>';
+        break;
+}
+$quoteId = $this->getQuote()->getId();
+$request = Mage::app()->getRequest();
+$url     = Mage::getUrl('bitpay/index/index/');
+if ($request->getScheme() == 'https') {
+    $url = str_replace('http://', 'https://', $url);
+}
+?>
+<script type="text/javascript">
+//<![CDATA[
+new PeriodicalExecuter(function() {
+    new Ajax.Request(
+        "<?php echo $url; ?>?quote=<?php echo $quoteId; ?>",
+        {
+            asynchronous: true,
+            evalScripts: true, 
+            onComplete: function(request, json) {
+                data = request.responseText.evalJSON(); 
+                if (data.paid) { 
+                    buttons = $$("button.btn-checkout");
+                    buttons.each(function(btn) { btn.click(); })
+                } 
+            }
+        }
+    )
+}, 5);
+//]]>
+</script>

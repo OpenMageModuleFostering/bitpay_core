@@ -3,7 +3,8 @@
  * @license Copyright 2011-2014 BitPay Inc., MIT License
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
  */
-?>
-<p><strong><?php echo $this->escapeHtml($this->getMethod()->getTitle()) ?></strong></p>
 
-<?php echo $this->getChildHtml()?>
+echo '<p><strong>' . $this->escapeHtml($this->getMethod()->getTitle()) . '</strong></p>';
+
+echo $this->getChildHtml();
+?>

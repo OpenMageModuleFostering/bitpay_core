@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2015 BitPay Inc., MIT License
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
  */
 
@@ -23,25 +23,21 @@ class Bitpay_Core_Model_Config_PairingCode extends Mage_Core_Model_Config_Data
          */
         $pairingCode = trim($this->getValue());
 
-        if (empty($pairingCode)) {
+        if (true === empty($pairingCode)) {
             return;
         }
 
-        Mage::helper('bitpay')->debugData('Attempting Pair Code');
+        \Mage::helper('bitpay')->debugData('[INFO] In Bitpay_Core_Model_Config_PairingCode::save(): attempting to pair with BitPay with pairing code ' . $pairingCode);
 
         try {
-            Mage::helper('bitpay')->sendPairingRequest($pairingCode);
-        } catch (Exception $e) {
-            Mage::helper('bitpay')->debugData(
-                sprintf('Error Pairing Code "%s"', $e->getMessage())
-            );
-            Mage::getSingleton('core/session')->addError(
-                'There was an error while trying to pair the pairing code. Please try again or enabled debug mode and send the "payment_bitpay.log" file to support.'
-            );
+            \Mage::helper('bitpay')->sendPairingRequest($pairingCode);
+        } catch (\Exception $e) {
+            \Mage::helper('bitpay')->debugData(sprintf('[ERROR] Exception thrown while calling the sendPairingRequest() function. The specific error message is: "%s"', $e->getMessage()));
+            \Mage::getSingleton('core/session')->addError('There was an error while trying to pair with BitPay using the pairing code '.$pairingCode.'. Please try again or enable debug mode and send the "payment_bitpay.log" file to support@bitpay.com for more help.');
 
             return;
         }
 
-        Mage::getSingleton('core/session')->addSuccess('Pairing Code was successful.');
+        \Mage::getSingleton('core/session')->addSuccess('Pairing with BitPay was successful.');
     }
 }

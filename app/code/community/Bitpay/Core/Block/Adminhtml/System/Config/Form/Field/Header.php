@@ -23,6 +23,11 @@ class Bitpay_Core_Block_Adminhtml_System_Config_Form_Field_Header extends Mage_A
      */
     public function render(Varien_Data_Form_Element_Abstract $element)
     {
+        if (false === isset($element) || true === empty($element)) {
+            \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Block_Adminhtml_System_Config_Form_Field_Header::render(): Missing or invalid $element parameter passed to function.');
+            throw new \Exception('In Bitpay_Core_Block_Adminhtml_System_Config_Form_Field_Header::render(): Missing or invalid $element parameter passed to function.');
+        }
+
         return $this->toHtml();
     }
 }

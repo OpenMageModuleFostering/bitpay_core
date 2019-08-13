@@ -6,13 +6,13 @@
  */
  -->
 <config>
-	<modules>
-		<Bitpay_Core>
-			<active>true</active>
-			<codePool>community</codePool>
-			<depends>
-				<Mage_Payment />
-			</depends>
-		</Bitpay_Core>
-	</modules>
+    <modules>
+        <Bitpay_Core>
+            <active>true</active>
+            <codePool>community</codePool>
+            <depends>
+                <Mage_Payment />
+            </depends>
+        </Bitpay_Core>
+    </modules>
 </config>

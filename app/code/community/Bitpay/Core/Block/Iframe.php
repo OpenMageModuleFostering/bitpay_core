@@ -2,6 +2,8 @@
 /**
  * @license Copyright 2011-2014 BitPay Inc., MIT License
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
+ * 
+ * TODO: Finish this iFrame implemenation... :/
  */
 
 class Bitpay_Core_Block_Iframe extends Mage_Checkout_Block_Onepage_Payment
@@ -21,48 +23,48 @@ class Bitpay_Core_Block_Iframe extends Mage_Checkout_Block_Onepage_Payment
      */
     public function getIframeUrl()
     {
-        if (Mage::getModel('bitpay/ipn')->getQuotePaid($this->getQuote()->getId())) {
+
+        if (!($quote = Mage::getSingleton('checkout/session')->getQuote()) 
+            or !($payment = $quote->getPayment())
+            or !($paymentMethod = $payment->getMethod())
+            or ($paymentMethod !== 'bitpay')
+            or (Mage::getStoreConfig('payment/bitpay/fullscreen')))
+        {
+            return 'notbitpay';
+        }
+
+        \Mage::helper('bitpay')->registerAutoloader();
+
+        // fullscreen disabled?
+        if (Mage::getStoreConfig('payment/bitpay/fullscreen'))
+        {
+            return 'disabled';
+        }
+
+        if (\Mage::getModel('bitpay/ipn')->getQuotePaid($this->getQuote()->getId())) {
             return 'paid'; // quote's already paid, so don't show the iframe
         }
 
         /*** @var Bitpay_Core_Model_PaymentMethod ***/
         $method  = $this->getQuote()->getPayment()->getMethodInstance();
-        $options = array_merge(
-            array(
-                'currency'          => $this->getQuote()->getQuoteCurrencyCode(),
-                'fullNotifications' => 'true',
-                'notificationURL'   => Mage::getUrl('bitpay/ipn'),
-                'redirectURL'       => Mage::getUrl('checkout/onepage/success'),
-                'transactionSpeed'  => Mage::getStoreConfig('payment/bitpay/speed'),
-            ),
-            $method->extractAddress($this->getQuote()->getShippingAddress())
-        );
-        Mage::helper('bitpay')->debugData($options);
 
-        // Mage doesn't round the total until saving and it can have more precision
-        // at this point which would be bad for later comparing records w/ bitpay.
-        // So round here to match what the price will be saved as:
-        $price = round($this->getQuote()->getGrandTotal(), 4);
+        $amount = $this->getQuote()->getGrandTotal();
 
-        //serialize info about the quote to detect changes
-        $hash = $method->getQuoteHash($this->getQuote()->getId());
+        if (false === isset($method) || true === empty($method)) {
+            \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Block_Iframe::getIframeUrl(): Could not obtain an instance of the payment method.');
+            throw new \Exception('In Bitpay_Core_Block_Iframe::getIframeUrl(): Could not obtain an instance of the payment method.');
+        }
 
-        Mage::helper('bitpay')->registerAutoloader();
-        //$invoice = bpCreateInvoice($quoteId, $price, array('quoteId' => $quoteId, 'quoteHash' => $hash), $options);
-        $invoice = array('url' => 'https://test.bitpay.com/invoice?id=5NxFkXcJbCSivtQRJa4kHP');
+        $bitcoinMethod = \Mage::getModel('bitpay/method_bitcoin');
 
-        if (array_key_exists('error', $invoice)) {
-            Mage::helper('bitpay')->debugData(
-                array(
-                    'Error creating bitpay invoice',
-                    $invoice['error'],
-                )
-            );
-            Mage::throwException("Error creating BitPay invoice. Please try again or use another payment option.");
-
+        try {
+            $bitcoinMethod->authorize($payment, $amount, true);
+        } catch (\Exception $e) {
+            \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Block_Iframe::getIframeUrl(): failed with the message: ' . $e->getMessage());
+            \Mage::throwException("Error creating BitPay invoice. Please try again or use another payment option.");
             return false;
         }
 
-        return $invoice['url'].'&view=iframe';
+        return $bitcoinMethod->getOrderPlaceRedirectUrl();
     }
 }

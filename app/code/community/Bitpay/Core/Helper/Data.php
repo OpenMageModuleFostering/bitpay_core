@@ -21,7 +21,9 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function debugData($debugData)
     {
-        Mage::getModel('bitpay/method_bitcoin')->debugData($debugData);
+        if (true === isset($debugData) && false === empty($debugData)) {
+            \Mage::getModel('bitpay/method_bitcoin')->debugData($debugData);
+        }
     }
 
     /**
@@ -29,7 +31,7 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function isDebug()
     {
-        return (boolean) Mage::getStoreConfig('payment/bitpay/debug');
+        return (boolean) \Mage::getStoreConfig('payment/bitpay/debug');
     }
 
     /**
@@ -39,7 +41,7 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function hasTransactionSpeed()
     {
-        $speed = Mage::getStoreConfig('payment/bitpay/speed');
+        $speed = \Mage::getStoreConfig('payment/bitpay/speed');
 
         return !empty($speed);
     }
@@ -51,7 +53,7 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getNotificationUrl()
     {
-        return Mage::getUrl(Mage::getStoreConfig('payment/bitpay/notification_url'));
+        return \Mage::getUrl(\Mage::getStoreConfig('payment/bitpay/notification_url'));
     }
 
     /**
@@ -61,7 +63,7 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getRedirectUrl()
     {
-        return Mage::getUrl(Mage::getStoreConfig('payment/bitpay/redirect_url'));
+        return \Mage::getUrl(\Mage::getStoreConfig('payment/bitpay/redirect_url'));
     }
 
     /**
@@ -70,11 +72,19 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function registerAutoloader()
     {
-        if (null === $this->_autoloaderRegistered) {
-            require_once Mage::getBaseDir('lib').'/Bitpay/Autoloader.php';
-            \Bitpay\Autoloader::register();
-            $this->_autoloaderRegistered = true;
-            $this->debugData('BitPay Autoloader has been registered');
+        if (true === empty($this->_autoloaderRegistered)) {
+            $autoloader_filename = \Mage::getBaseDir('lib').'/Bitpay/Autoloader.php';
+
+            if (true === is_file($autoloader_filename) && true === is_readable($autoloader_filename)) {
+                require_once $autoloader_filename;
+                \Bitpay\Autoloader::register();
+                $this->_autoloaderRegistered = true;
+                $this->debugData('[INFO] In Bitpay_Core_Helper_Data::registerAutoloader(): autoloader file was found and has been registered.');
+            } else {
+                $this->_autoloaderRegistered = false;
+                $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::registerAutoloader(): autoloader file was not found or is not readable. Cannot continue!');
+                throw new \Exception('In Bitpay_Core_Helper_Data::registerAutoloader(): autoloader file was not found or is not readable. Cannot continue!');
+            }
         }
     }
 
@@ -84,21 +94,36 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function generateAndSaveKeys()
     {
-        $this->debugData('Generating Keys');
-        $this->registerAutoloader();
+        $this->debugData('[INFO] In Bitpay_Core_Helper_Data::generateAndSaveKeys(): attempting to generate new keypair and save to database.');
+
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
 
         $this->_privateKey = new Bitpay\PrivateKey('payment/bitpay/private_key');
-        $this->_privateKey->generate();
+
+        if (false === isset($this->_privateKey) || true === empty($this->_privateKey)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::generateAndSaveKeys(): could not create new Bitpay private key object. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::generateAndSaveKeys(): could not create new Bitpay private key object. Cannot continue!');
+        } else {
+            $this->_privateKey->generate();
+        }
 
         $this->_publicKey = new Bitpay\PublicKey('payment/bitpay/public_key');
-        $this->_publicKey
-            ->setPrivateKey($this->_privateKey)
-            ->generate();
+
+        if (false === isset($this->_publicKey) || true === empty($this->_publicKey)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::generateAndSaveKeys(): could not create new Bitpay public key object. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::generateAndSaveKeys(): could not create new Bitpay public key object. Cannot continue!');
+        } else {
+            $this->_publicKey
+                 ->setPrivateKey($this->_privateKey)
+                 ->generate();
+        }
 
         $this->getKeyManager()->persist($this->_publicKey);
         $this->getKeyManager()->persist($this->_privateKey);
 
-        $this->debugData('Keys persisted to database');
+        $this->debugData('[INFO] In Bitpay_Core_Helper_Data::generateAndSaveKeys(): key manager called to persist keypair to database.');
     }
 
     /**
@@ -106,36 +131,62 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function sendPairingRequest($pairingCode)
     {
-        $this->debugData(
-            sprintf('Sending Paring Request with pairing code "%s"', $pairingCode)
-        );
+        if (false === isset($pairingCode) || true === empty($pairingCode)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::sendPairingRequest(): missing or invalid pairingCode parameter.');
+            throw new \Exception('In Bitpay_Core_Helper_Data::sendPairingRequest(): missing or invalid pairingCode parameter.');
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::sendPairingRequest(): function called with the pairingCode parameter: ' . $pairingCode);
+        }
+
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
 
         // Generate/Regenerate keys
         $this->generateAndSaveKeys();
         $sin = $this->getSinKey();
 
-        $this->debugData(
-            sprintf('Sending Pairing Request for SIN "%s"', (string) $sin)
-        );
+        if (false === isset($sin) || true === empty($sin)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::sendPairingRequest(): could not retrieve the SIN parameter. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::sendPairingRequest(): could not retrieve the SIN parameter. Cannot continue!');
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::sendPairingRequest(): attempting to pair with the SIN parameter: ' . $sin);
+        }
 
         // Sanitize label
-        $label = preg_replace('/[^a-zA-Z0-9 \-\_\.]/', '', Mage::app()->getStore()->getName());
-        $label = substr('Magento - '.$label, 0, 59);
+        $label = preg_replace('/[^a-zA-Z0-9 ]/', '', \Mage::app()->getStore()->getName());
+        $label = substr('Magento ' . $label, 0, 59);
+
+        $this->debugData('[INFO] In Bitpay_Core_Helper_Data::sendPairingRequest(): using the label "' . $label . '".');
 
         $token = $this->getBitpayClient()->createToken(
-            array(
-                'id'          => (string) $sin,
-                'pairingCode' => $pairingCode,
-                'label'       => $label,
-            )
-        );
+                                                       array(
+                                                            'id'          => (string) $sin,
+                                                            'pairingCode' => (string) $pairingCode,
+                                                            'label'       => (string) $label,
+                                                       )
+                                           );
 
-        $this->debugData('Token Obtained');
+        if (false === isset($token) || true === empty($token)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::sendPairingRequest(): could not obtain the token from the pairing process. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::sendPairingRequest(): could not obtain the token from the pairing process. Cannot continue!');
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::sendPairingRequest(): token successfully obtained.');
+        }
 
         $config = new \Mage_Core_Model_Config();
-        $config->saveConfig('payment/bitpay/token', $token->getToken());
 
-        $this->debugData('Token Persisted persisted to database');
+        if (false === isset($config) || true === empty($config)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::sendPairingRequest(): could not create new Mage_Core_Model_Config object. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::sendPairingRequest(): could not create new Mage_Core_Model_Config object. Cannot continue!');
+        }
+
+        if($config->saveConfig('payment/bitpay/token', $token->getToken())) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::sendPairingRequest(): token saved to database.');
+        } else {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::sendPairingRequest(): token could not be saved to database.');
+            throw new \Exception('In Bitpay_Core_Helper_Data::sendPairingRequest(): token could not be saved to database.');
+        }
     }
 
     /**
@@ -143,53 +194,97 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getSinKey()
     {
-        if (null !== $this->_sin) {
+        if (false === empty($this->_sin)) {
             return $this->_sin;
         }
 
-        $this->debugData('Getting SIN Key');
+        $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getSinKey(): attempting to get the SIN parameter.');
 
-        $this->registerAutoloader();
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
+
         $this->_sin = new Bitpay\SinKey();
+
+        if (false === isset($this->_sin) || true === empty($this->_sin)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getSinKey(): could not create new BitPay SinKey object. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::getSinKey(): could not create new BitPay SinKey object. Cannot continue!');
+        }
+
         $this->_sin
-            ->setPublicKey($this->getPublicKey())
-            ->generate();
+             ->setPublicKey($this->getPublicKey())
+             ->generate();
+
+        if (false === isset($this->_sin) || true === empty($this->_sin)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getSinKey(): could not generate a new SIN from the public key. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::getSinKey(): could not generate a new SIN from the public key. Cannot continue!');
+        }
 
         return $this->_sin;
     }
 
     public function getPublicKey()
     {
-        if (null !== $this->_publicKey) {
+        if (true === isset($this->_publicKey) && false === empty($this->_publicKey)) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPublicKey(): found an existing public key, returning that.');
             return $this->_publicKey;
         }
 
-        $this->debugData('Getting Public Key');
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
+
+        $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPublicKey(): did not find an existing public key, attempting to load one from the key manager.');
 
         $this->_publicKey = $this->getKeyManager()->load('payment/bitpay/public_key');
 
-        if (!$this->_publicKey) {
+        if (true === empty($this->_publicKey)) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPublicKey(): could not load a public key from the key manager, generating a new one.');
             $this->generateAndSaveKeys();
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPublicKey(): successfully loaded public key from the key manager, returning that.');
+            return $this->_publicKey;
         }
 
-        return $this->_publicKey;
+        if (false === empty($this->_publicKey)) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPublicKey(): successfully generated a new public key.');
+            return $this->_publicKey;
+        } else {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getPublicKey(): could not load or generate a new public key. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::getPublicKey(): could not load or generate a new public key. Cannot continue!');
+        }
     }
 
     public function getPrivateKey()
     {
-        if (null !== $this->_privateKey) {
+        if (false === empty($this->_privateKey)) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPrivateKey(): found an existing private key, returning that.');
             return $this->_privateKey;
         }
 
-        $this->debugData('Getting Private Key');
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
+
+        $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPrivateKey(): did not find an existing private key, attempting to load one from the key manager.');
 
         $this->_privateKey = $this->getKeyManager()->load('payment/bitpay/private_key');
 
-        if (!$this->_publicKey) {
+        if (true === empty($this->_privateKey)) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPrivateKey(): could not load a private key from the key manager, generating a new one.');
             $this->generateAndSaveKeys();
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPrivateKey(): successfully loaded private key from the key manager, returning that.');
+            return $this->_privateKey;
         }
 
-        return $this->_privateKey;
+        if (false === empty($this->_privateKey)) {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getPrivateKey(): successfully generated a new private key.');
+            return $this->_privateKey;
+        } else {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getPrivateKey(): could not load or generate a new private key. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::getPrivateKey(): could not load or generate a new private key. Cannot continue!');
+        }
     }
 
     /**
@@ -197,44 +292,22 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getKeyManager()
     {
-        if (null == $this->_keyManager) {
-            $this->registerAutoloader();
-            $this->debugData('Creating instance of KeyManager');
+        if (true === empty($this->_keyManager)) {
+            if (true === empty($this->_autoloaderRegistered)) {
+                $this->registerAutoloader();
+            }
+
             $this->_keyManager = new Bitpay\KeyManager(new Bitpay\Storage\MagentoStorage());
+
+            if (false === isset($this->_keyManager) || true === empty($this->_keyManager)) {
+                $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getKeyManager(): could not create new BitPay KeyManager object. Cannot continue!');
+                throw new \Exception('In Bitpay_Core_Helper_Data::getKeyManager(): could not create new BitPay KeyManager object. Cannot continue!');
+            } else {
+                $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getKeyManager(): successfully created new BitPay KeyManager object.');
+            }
         }
 
         return $this->_keyManager;
-    }
-
-    /**
-     * Initialize an instance of Bitpay or return the one that has already
-     * been created.
-     *
-     * @return Bitpay\Bitpay
-     */
-    public function getBitpay()
-    {
-        if (null === $this->_bitpay) {
-            $this->registerAutoloader();
-            $this->_bitpay = new Bitpay\Bitpay(array('bitpay' => $this->getBitpayConfig()));
-        }
-
-        return $this->_bitpay;
-    }
-
-    /**
-     * Sets up the bitpay container with settings for magento
-     *
-     * @return array
-     */
-    protected function getBitpayConfig()
-    {
-        return array(
-            'public_key'  => 'payment/bitpay/public_key',
-            'private_key' => 'payment/bitpay/private_key',
-            'network'     => Mage::getStoreConfig('payment/bitpay/network'),
-            'key_storage' => '\\Bitpay\\Storage\\MagentoStorage',
-        );
     }
 
     /**
@@ -242,17 +315,34 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getBitpayClient()
     {
-        if (null !== $this->_client) {
+        if (false === empty($this->_client)) {
             return $this->_client;
         }
 
-        $this->registerAutoloader();
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
 
         $this->_client = new Bitpay\Client\Client();
+
+        if (false === isset($this->_client) || true === empty($this->_client)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getBitpayClient(): could not create new BitPay Client object. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::getBitpayClient(): could not create new BitPay Client object. Cannot continue!');
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getBitpayClient(): successfully created new BitPay Client object.');
+        }
+
+        if(\Mage::getStoreConfig('payment/bitpay/network') === 'livenet') {
+          $network = new Bitpay\Network\Livenet();
+        } else {
+          $network = new Bitpay\Network\Testnet();
+        }
+        $adapter = new Bitpay\Client\Adapter\CurlAdapter();
+
         $this->_client->setPublicKey($this->getPublicKey());
         $this->_client->setPrivateKey($this->getPrivateKey());
-        $this->_client->setNetwork($this->getBitpay()->get('network'));
-        $this->_client->setAdapter($this->getBitpay()->get('adapter'));
+        $this->_client->setNetwork($network);
+        $this->_client->setAdapter($adapter);
         $this->_client->setToken($this->getToken());
 
         return $this->_client;
@@ -260,9 +350,20 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
 
     public function getToken()
     {
-        $this->registerAutoloader();
+        if (true === empty($this->_autoloaderRegistered)) {
+            $this->registerAutoloader();
+        }
+
         $token = new Bitpay\Token();
-        $token->setToken(Mage::getStoreConfig('payment/bitpay/token'));
+
+        if (false === isset($token) || true === empty($token)) {
+            $this->debugData('[ERROR] In Bitpay_Core_Helper_Data::getToken(): could not create new BitPay Token object. Cannot continue!');
+            throw new \Exception('In Bitpay_Core_Helper_Data::getToken(): could not create new BitPay Token object. Cannot continue!');
+        } else {
+            $this->debugData('[INFO] In Bitpay_Core_Helper_Data::getToken(): successfully created new BitPay Token object.');
+        }
+
+        $token->setToken(\Mage::getStoreConfig('payment/bitpay/token'));
 
         return $token;
     }

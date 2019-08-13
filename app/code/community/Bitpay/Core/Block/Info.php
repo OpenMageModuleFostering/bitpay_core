@@ -15,11 +15,22 @@ class Bitpay_Core_Block_Info extends Mage_Payment_Block_Info
     public function getBitpayInvoiceUrl()
     {
         $order       = $this->getInfo()->getOrder();
+
+        if (false === isset($order) || true === empty($order)) {
+            \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Block_Info::getBitpayInvoiceUrl(): could not obtain the order.');
+            throw new \Exception('In Bitpay_Core_Block_Info::getBitpayInvoiceUrl(): could not obtain the order.');
+        }
+
         $incrementId = $order->getIncrementId();
 
-        $bitpayInvoice = Mage::getModel('bitpay/invoice')->load($incrementId, 'increment_id');
+        if (false === isset($incrementId) || true === empty($incrementId)) {
+            \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Block_Info::getBitpayInvoiceUrl(): could not obtain the incrementId.');
+            throw new \Exception('In Bitpay_Core_Block_Info::getBitpayInvoiceUrl(): could not obtain the incrementId.');
+        }
 
-        if ($bitpayInvoice) {
+        $bitpayInvoice = \Mage::getModel('bitpay/invoice')->load($incrementId, 'increment_id');
+
+        if (true === isset($bitpayInvoice) && false === empty($bitpayInvoice)) {
             return $bitpayInvoice->getUrl();
         }
     }

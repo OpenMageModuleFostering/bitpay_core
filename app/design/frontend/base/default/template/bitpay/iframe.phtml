@@ -32,19 +32,18 @@ if ($request->getScheme() == 'https') {
 //<![CDATA[
 new PeriodicalExecuter(function() {
     new Ajax.Request(
-        "<?php echo $url; ?>?quote=<?php echo $quoteId; ?>",
+        "<?php echo $url . '?quote=' . $quoteId; ?>",
         {
             asynchronous: true,
             evalScripts: true, 
             onComplete: function(request, json) {
-                data = request.responseText.evalJSON(); 
+                var data = request.responseText.evalJSON(); 
                 if (data.paid) { 
-                    buttons = $$("button.btn-checkout");
-                    buttons.each(function(btn) { btn.click(); })
+                    review.save();
                 } 
             }
         }
-    )
+    );
 }, 5);
 //]]>
 </script>

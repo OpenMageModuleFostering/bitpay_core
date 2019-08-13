@@ -145,6 +145,10 @@ class Util
             throw new \Exception(sprintf('Argument is expected to be a string of decimal numbers. You passed in "%s"', gettype($dec)));
         }
 
+        if (substr($dec, 0, 1) === '-') {
+            $dec = substr($dec, 1);
+        }
+
         $hex = '';
 
         while (Math::cmp($dec, 0) > 0) {
@@ -190,16 +194,15 @@ class Util
         if (null === $parameters) {
             $parameters = new Secp256k1();
         }
-
         $tmp = self::decToBin($hex);
 
         $n   = strlen($tmp) - 1;
-        $old = 11;
         $S   = new Point(PointInterface::INFINITY, PointInterface::INFINITY);
-        $gmpS = new Point(PointInterface::INFINITY, PointInterface::INFINITY);
+
 
         while ($n >= 0) {
             $S = self::pointDouble($S);
+
             if ($tmp[$n] == 1) {
                 $S = self::pointAdd($S, $point);
             }
@@ -402,5 +405,70 @@ class Util
         }
 
         return strrev($byte);
+    }
+
+    /**
+     * Checks dependencies for the library
+     *
+     * @return array list of each requirement, boolean true if met, string error message if not as value
+     */
+    public static function checkRequirements()
+    {
+        $requirements = array();
+
+        // PHP Version
+        if (!defined('PHP_VERSION_ID')) {
+            $version = explode('.', PHP_VERSION);
+            define('PHP_VERSION_ID', ($version[0] * 10000 + $version[1] * 100 + $version[2]));
+        }
+        if (PHP_VERSION_ID < 50400) {
+            $requirements['PHP'] = 'Your PHP version, ' . PHP_VERSION . ', is too low. PHP version >= 5.4 is required.';
+        } else {
+            $requirements['PHP'] = true;
+        }
+
+        // Mcrypt Extension
+        if (!extension_loaded('mcrypt')) {
+            $requirements['Mcrypt'] = 'The Mcrypt PHP extension could not be found.';
+        } else {
+            $requirements['Mcrypt'] = true;
+        }
+
+        // OpenSSL Extension
+        if (!extension_loaded('openssl')) {
+            $requirements['OpenSSL'] = 'The OpenSSL PHP extension could not be found.';
+        } else {
+            $requirements['OpenSSL'] = true;
+        }
+
+        // JSON Extension
+        if (!extension_loaded('json')) {
+            $requirements['JSON'] = 'The JSON PHP extension could not be found.';
+        } else {
+            $requirements['JSON'] = true;
+        }
+
+        // cURL Extension
+        if (!extension_loaded('curl')) {
+            $requirements['cURL'] = 'The cURL PHP extension could not be found.';
+        } else {
+            $requirements['cURL'] = true;
+            $curl_version = curl_version();
+            $ssl_supported = ($curl_version['features'] & CURL_VERSION_SSL);
+            if (!$ssl_supported) {
+                $requirements['cURL.SSL'] = 'The cURL PHP extension does not have SSL support.';
+            } else {
+                $requirements['cURL.SSL'] = true;
+            }
+        }
+
+        // Math
+        if (!extension_loaded('bcmath') && !extension_loaded('gmp')) {
+            $requirements['Math'] = 'Either the BC Math or GMP PHP extension is required.  Neither could be found.';
+        } else {
+            $requirements['Math'] = true;
+        }
+
+        return $requirements;
     }
 }

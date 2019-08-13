@@ -8,7 +8,7 @@
 <config>
     <modules>
         <Bitpay_Core>
-            <version>2.0.0</version>
+            <version>2.0.1</version>
         </Bitpay_Core>
     </modules>
 
@@ -53,19 +53,6 @@
     </admin>
 
     <global>
-        <!--
-        <events>
-            <controller_front_init_routers>
-                <observers>
-                    <bitpay_core_model_observer>
-                        <type>singleton</type>
-                        <class>Bitpay_Core_Model_Observer</class>
-                        <method>checkForRequest</method>
-                    </bitpay_core_model_observer>
-                </observers>
-            </controller_front_init_routers>
-        </events>
-        -->
         <blocks>
             <bitpay>
                 <class>Bitpay_Core_Block</class>
@@ -121,7 +108,7 @@
     <default>
         <payment>
             <bitpay>
-                <model>bitpay/paymentMethod</model>
+                <model>bitpay/method_bitcoin</model>
                 <order_status>new</order_status>
                 <payment_action>authorize</payment_action>
                 <active>0</active>

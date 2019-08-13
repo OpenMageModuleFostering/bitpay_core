@@ -29,12 +29,30 @@ clear.
 * [OpenSSL](http://us2.php.net/openssl) Must be compiled with PHP
 * PHP >= 5.4
 
+# Upgrade From Version 1.x to 2.x
+
+Merchants who have previous been using the BitPay Magento plugin will need to remove
+previous plugin. This can be done by using the [scripts/delete](https://github.com/bitpay/magento-plugin/blob/master/scripts/delete)
+script before installing the new plugin.
+
 # Installation
 
-## Magento Connect
+## Magento Connect Manager
 
-@TODO Put link to Magento Connect page where our extension is
-@TODO Describe or link to documentation for user to explain how to install
+Goto [http://www.magentocommerce.com/magento-connect/bitpay-payment-method.html](http://www.magentocommerce.com/magento-connect/bitpay-payment-method.html)
+and click the *Install Now* link which will give you the *Extension Key* needed
+for the next step.
+
+Once you have the key, log into you Magento Store's Admin Panel and navigate to
+**System > Magento Connect > Magento Connect Manager**.
+
+***NOTE*** It may ask you to log in again using the same credentials that you use
+to log into the Admin Panel.
+
+All you need to do is paste the extension key and click on the *Install* button.
+
+***WARNING*** It is good practice to backup your database before installing
+extensions. Please make sure you Create Backups.
 
 ## Download
 
@@ -42,6 +60,12 @@ Visit the [Releases](https://github.com/bitpay/magento-plugin/releases) page of
 this repository and download the latest version. Once this is done, you can just
 unzip the contents and use any method you want to put them on your server. The
 contents will mirror the Magento directory structure.
+
+***NOTE*** These files can also up uploaded using the *Magento Connect Manager*
+that comes with your Magento Store
+
+***WARNING*** It is good practice to backup your database before installing
+extensions. Please make sure you Create Backups.
 
 ## modman
 
@@ -63,11 +87,15 @@ Using and setting up composer is outside the scope, however you will find the
 documentation on their site comprehensive.
 
 Once you are done, you can then run the ``scripts/package`` script to create a
-distribution file which you can find in ``build/dist``. This is the file that
+distribution files which you can find in ``build/dist``. This is the file that
 you can upload to your server to unzip or do with what you will.
 
 If you encounter any issues or implement any updates or changes, please open an
 [issue](https://github.com/bitpay/magento-plugin/issues) or submit a Pull Request.
+
+***NOTE*** The ``scripts/package`` file contains some configuration settings that
+will need to change for different releases. If you are using this script to build
+files that are for distribution, these will need to be updated.
 
 # Configuration
 
@@ -80,10 +108,10 @@ Here your will need to create a [pairing code](https://bitpay.com/api-tokens) us
 your BitPay merchant account. Once you have a Pairing Code, put the code in the
 Pairing Code field. This will take care of the rest for you.
 
-**NOTE** Pairing Codes are only valid for a short period of time. If it expires
+***NOTE*** Pairing Codes are only valid for a short period of time. If it expires
 before you get to use it, you can always create a new one an use the new one.
 
-**NOTE** You will only need to do this once since each time you do this, the
+***NOTE*** You will only need to do this once since each time you do this, the
 extension will generate public and private keys that are used to identify you
 when using the API.
 
@@ -127,7 +155,7 @@ fulfillment.
 3. Check the `payment_bitpay.log` file for any errors during BitPay payment attempts.
    If you contact BitPay support, they will ask to see the log file to help
    diagnose the problem.  The log file will be found inside your Magento's
-   `var/log/` directory. **NOTE** You will need to enable the debugging
+   `var/log/` directory. ***NOTE*** You will need to enable the debugging
    setting for the extension to output information into the log file.
 4. Check the version of this plugin against the official plugin repository to
    ensure you are using the latest version. Your issue might have been
@@ -136,7 +164,7 @@ fulfillment.
 5. If all else fails, send an email describing your issue **in detail** to
    support@bitpay.com
 
-**TIP**: When contacting support it will help us is you provide:
+***TIP***: When contacting support it will help us is you provide:
 
 * Magento Version (Found at the bottom page in the Administration section)
 * Other extensions you have installed

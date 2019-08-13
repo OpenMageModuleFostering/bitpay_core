@@ -78,16 +78,6 @@ class DefinitionDecorator extends Definition
 
     /**
      * {@inheritdoc}
-     */
-    public function setFactory($callable)
-    {
-        $this->changes['factory'] = true;
-
-        return parent::setFactory($callable);
-    }
-
-    /**
-     * {@inheritdoc}
      *
      * @api
      */

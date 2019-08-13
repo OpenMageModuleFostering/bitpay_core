@@ -8,13 +8,6 @@
  */
 class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
 {
-    /**
-     * File that is used to put all logging information in.
-     *
-     * @var string
-     */
-    const LOG_FILE = 'payment_bitpay.log';
-
     protected $_autoloaderRegistered;
     protected $_bitpay;
     protected $_sin;
@@ -24,21 +17,11 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
     protected $_client;
 
     /**
-     * Returns the file used for logging
-     *
-     * @return string
-     */
-    public function getLogFile()
-    {
-        return self::LOG_FILE;
-    }
-
-    /**
      * @param mixed $debugData
      */
     public function debugData($debugData)
     {
-        Mage::getModel('bitpay/paymentMethod')->debugData($debugData);
+        Mage::getModel('bitpay/method_bitcoin')->debugData($debugData);
     }
 
     /**
@@ -59,139 +42,6 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
         $speed = Mage::getStoreConfig('payment/bitpay/speed');
 
         return !empty($speed);
-    }
-
-    /**
-     * This method is used to removed IPN records in the database that
-     * are expired and update the magento orders to canceled if they have
-     * expired.
-     */
-    public function cleanExpired()
-    {
-        $expiredRecords = Mage::getModel('bitpay/ipn')->getExpired();
-
-        foreach ($expiredRecords as $ipn) {
-            $incrementId = $ipn->getOrderId();
-            if (empty($incrementId)) {
-                $this->logIpnParseError($ipn);
-                continue;
-            }
-
-            // Cancel the order
-            $order = Mage::getModel('sales/order')->loadByIncrementId($incrementId);
-            $this->cancelOrder($order);
-
-            // Delete all IPN records for order id
-            Mage::getModel('bitpay/ipn')
-                ->deleteByOrderId($ipn->getOrderId());
-            Mage::log(
-                sprintf('Deleted Record: %s', $ipn->toJson()),
-                Zend_Log::DEBUG,
-                self::LOG_FILE
-            );
-        }
-    }
-
-    /**
-     * Log error if there is an issue parsing an IPN record
-     *
-     * @param Bitpay_Core_Model_Ipn $ipn
-     * @param boolean               $andDelete
-     */
-    private function logIpnParseError(Bitpay_Core_Model_Ipn $ipn, $andDelete = true)
-    {
-        Mage::log(
-            'Error processing IPN record',
-            Zend_Log::DEBUG,
-            self::LOG_FILE
-        );
-        Mage::log(
-            $ipn->toJson(),
-            Zend_Log::DEBUG,
-            self::LOG_FILE
-        );
-
-        if ($andDelete) {
-            $ipn->delete();
-            Mage::log(
-                'IPN record deleted from database',
-                Zend_Log::DEBUG,
-                self::LOG_FILE
-            );
-        }
-    }
-
-    /**
-     * This will cancel the order in the magento database, this will return
-     * true if the order was canceled or it will return false if the order
-     * was not updated. For example, if the order is complete, we don't want
-     * to cancel that order so this method would return false.
-     *
-     * @param Mage_Sales_Model_Order
-     *
-     * @return boolean
-     */
-    private function cancelOrder(Mage_Sales_Model_Order $order)
-    {
-        $orderState = $order->getState();
-
-        /**
-         * These order states are useless and can just be skipped over. No
-         * need to cancel an order that is alread canceled.
-         */
-        $statesWeDontCareAbout = array(
-            Mage_Sales_Model_Order::STATE_CANCELED,
-            Mage_Sales_Model_Order::STATE_CLOSED,
-            Mage_Sales_Model_Order::STATE_COMPLETE,
-        );
-
-        if (in_array($orderState, $statesWeDontCareAbout)) {
-            return false;
-        }
-
-        $order->setState(
-            Mage_Sales_Model_Order::STATE_CANCELED,
-            true,
-            'BitPay Invoice has expired', // Comment
-            false // notifiy customer?
-        )->save();
-        Mage::log(
-            sprintf('Order "%s" has been canceled', $order->getIncrementId()),
-            Zend_Log::DEBUG,
-            self::LOG_FILE
-        );
-
-        return true;
-    }
-
-    /**
-     * @param Varien_Object $payment
-     *
-     * @return Bitpay_Core_Model_PaymentMethod
-     */
-    public function checkForPayment(Varien_Object $payment)
-    {
-        Mage::log(
-            sprintf('Checking for payment'),
-            Zend_Log::DEBUG,
-            Mage::helper('bitpay')->getLogFile()
-        );
-
-        $quoteId = $payment->getOrder()->getQuoteId();
-        $ipn     = Mage::getModel('bitpay/ipn');
-
-        if (!$ipn->GetQuotePaid($quoteId)) {
-            // This is the error that is displayed to the customer during checkout.
-            Mage::throwException("Order not paid for.  Please pay first and then Place your Order.");
-            Mage::log('Order not paid for. Please pay first and then Place Your Order.', Zend_Log::CRIT, Mage::helper('bitpay')->getLogFile());
-        } elseif (!$ipn->GetQuoteComplete($quoteId)) {
-            // order status will be PAYMENT_REVIEW instead of PROCESSING
-            $payment->setIsTransactionPending(true);
-        } else {
-            $this->MarkOrderPaid($payment->getOrder());
-        }
-
-        return $this;
     }
 
     /**
@@ -260,6 +110,8 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
             sprintf('Sending Paring Request with pairing code "%s"', $pairingCode)
         );
 
+        // Generate/Regenerate keys
+        $this->generateAndSaveKeys();
         $sin = $this->getSinKey();
 
         $this->debugData(

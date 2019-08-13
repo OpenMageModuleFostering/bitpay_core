@@ -6,20 +6,6 @@
  */
  -->
  <config>
-    <!--
-    <menu>
-        <bitpay translate="title" module="bitpay">
-            <title>BitPay</title>
-            <sort_order>9999</sort_order>
-            <children>
-                <support module="bitpay">
-                    <title>Support</title>
-                    <action>adminhtml/bitpay/support</action>
-                </support>
-            </children>
-        </bitpay>
-    </menu>
-    -->
     <acl>
         <resources>
             <admin>
@@ -42,7 +28,6 @@
             </admin>
         </resources>
     </acl>
-    <!--
     <layout>
         <updates>
             <bitpay>
@@ -50,7 +35,6 @@
             </bitpay>
         </updates>
     </layout>
-    -->
     <translate>
         <modules>
             <bitpay>

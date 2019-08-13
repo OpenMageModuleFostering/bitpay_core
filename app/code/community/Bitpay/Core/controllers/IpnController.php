@@ -4,6 +4,8 @@
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
  */
 
+
+
 /**
  * @route /bitpay/ipn
  */
@@ -51,7 +53,7 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
             )
         )->save();
 
-        if (!isset($ipn->posData->id)) {
+        if (empty($ipn->id) || !isset($ipn->posData->id)) {
             Mage::helper('bitpay')->debugData(
                 sprintf('Did not receive order id in IPN. See IPN "%s" in database.', $mageIpn->getId())
             );
@@ -62,21 +64,40 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
 
         if (!$order->getId()) {
             Mage::helper('bitpay')->debugData('Invalid Bitpay IPN received.');
-            throw new Exception('Invalid Bitpay IPN received.');
+            Mage::throwException('Invalid Bitpay IPN received.');
+        }
+
+        /**
+         * Ask BitPay to retreive the invoice so we can make sure the invoices
+         * match up and no one is using an automated tool to post IPN's to merchants
+         * store.
+         */
+        $invoice = Mage::getModel('bitpay/method_bitcoin')->fetchInvoice($ipn->id);
+
+        // Does the status match?
+        if ($invoice && $invoice->getStatus() != $ipn->status) {
+            Mage::getModel('bitpay/method_bitcoin')->debugData('IPN status and status from BitPay are different');
+            Mage::throwException('There was an error processing the ipn');
+        }
+
+        // Does the price match?
+        if ($invoice && $invoice->getPrice() != $ipn->price) {
+            Mage::getModel('bitpay/method_bitcoin')>debugData('Price difference');
+            Mage::throwException('There was an error processing the ipn');
         }
 
         // Update the order to notifiy that it has been paid
-        if (in_array($ipn->status, array('paid', 'confirmed', 'complete'))) {
+        if (in_array($invoice->getStatus(), array('paid', 'confirmed', 'complete'))) {
             $payment = Mage::getModel('sales/order_payment')->setOrder($order);
-            $payment->registerCaptureNotification($ipn->price);
+            $payment->registerCaptureNotification($invoice->getPrice());
             $order->addPayment($payment)->save();
         }
 
         // use state as defined by Merchant
-        $state = Mage::getStoreConfig(sprintf('payment/bitpay/invoice_%s', $ipn->status));
+        $state = Mage::getStoreConfig(sprintf('payment/bitpay/invoice_%s', $invoice->getStatus()));
         $order->addStatusToHistory(
             $state,
-            sprintf('Incoming IPN status "%s" updateded order state to "%s"', $ipn->status, $state)
+            sprintf('Incoming IPN status "%s" updateded order state to "%s"', $invoice->getStatus(), $state)
         )->save();
     }
 }

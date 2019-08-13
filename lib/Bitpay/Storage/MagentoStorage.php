@@ -24,8 +24,10 @@ class MagentoStorage implements StorageInterface
     {
         $this->_keys[$key->getId()] = $key;
 
-        $config = new \Mage_Core_Model_Config();
-        $config->saveConfig($key->getId(), serialize($key));
+        $data          = serialize($key);
+        $encryptedData = \Mage::helper('core')->encrypt($data);
+        $config        = new \Mage_Core_Model_Config();
+        $config->saveConfig($key->getId(), $encryptedData);
     }
 
     /**
@@ -46,7 +48,7 @@ class MagentoStorage implements StorageInterface
             return false;
         }
 
-        $decodedEntity = unserialize($entity);
+        $decodedEntity = unserialize(\Mage::helper('core')->decrypt($entity));
 
         if (empty($decodedEntity)) {
             return false;

@@ -42,7 +42,8 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             throw new \Exception('In Bitpay_Core_Model_Method_Bitcoin::authorize(): missing payment or amount parameters.');
         }
 
-        $amount = $payment->getOrder()->getQuote()->getGrandTotal();
+        // use the price in the currency of the store (not in the user selected currency)
+        $amount = $payment->getOrder()->getQuote()->getBaseGrandTotal();
 
         $this->debugData('[INFO] Bitpay_Core_Model_Method_Bitcoin::authorize(): authorizing new order.');
 
@@ -374,7 +375,9 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             throw new \Exception('In Bitpay_Core_Model_Method_Bitcoin::addCurrencyInfo(): could not construct new BitPay currency object.');
         }
 
-        $currency->setCode($order->getOrderCurrencyCode());
+        //$currency->setCode($order->getOrderCurrencyCode());
+        //use the store currency code (not the customer selected currency)
+        $currency->setCode(\Mage::app()->getStore()->getBaseCurrencyCode());
         $invoice->setCurrency($currency);
 
         return $invoice;

@@ -52,14 +52,14 @@ class MagentoStorage implements StorageInterface
          */
         if (false === isset($entity) || true === empty($entity)) {
             \Mage::helper('bitpay')->debugData('[INFO] Call to MagentoStorage::load($id) with the id of ' . $id . ' did not return the store config parameter because it was not found in the database.');
-            return false;
+            throw new \Exception('[INFO] Call to MagentoStorage::load($id) with the id of ' . $id . ' did not return the store config parameter because it was not found in the database.');
         }
 
         $decodedEntity = unserialize(\Mage::helper('core')->decrypt($entity));
 
         if (false === isset($decodedEntity) || true === empty($decodedEntity)) {
             \Mage::helper('bitpay')->debugData('[INFO] Call to MagentoStorage::load($id) with the id of ' . $id . ' could not decrypt & unserialize the entity ' . $entity . '.');
-            return false;
+            throw new \Exception('[INFO] Call to MagentoStorage::load($id) with the id of ' . $id . ' could not decrypt & unserialize the entity ' . $entity . '.');
         }
 
         \Mage::helper('bitpay')->debugData('[INFO] Call to MagentoStorage::load($id) with the id of ' . $id . ' successfully decrypted & unserialized the entity ' . $entity . '.');

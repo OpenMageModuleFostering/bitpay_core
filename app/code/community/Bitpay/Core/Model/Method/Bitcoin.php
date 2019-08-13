@@ -321,11 +321,12 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             $quote = Mage::getSingleton('checkout/session')->getQuote();
             $address = $quote->getBillingAddress();
         }
-        
-        if (!empty($address->getStreet1())) {
+
+        $street = $address->getStreet1();
+        if (null !== $street && '' !== $street) {
             $buyer->setAddress(
                 array(
-                    $address->getStreet1(),
+                    $street,
                     $address->getStreet2(),
                     $address->getStreet3(),
                     $address->getStreet4()
@@ -333,30 +334,37 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
                 );
         }
 
-        if (!empty($address->getRegionCode())) {
-            $buyer->setState($address->getRegionCode());
-        } else if (!empty($address->getRegion())) {
-            $buyer->setState($address->getRegion());
+        $region     = $address->getRegion();
+        $regioncode = $address->getRegionCode();
+        if (null !== $regioncode && '' !== $regioncode) {
+            $buyer->setState($regioncode);
+        } else if (null !== $region && '' !== $region) {
+            $buyer->setState($region);
         }
 
-        if (!empty($address->getCountry())) {
-            $buyer->setCountry($address->getCountry());
+        $country = $address->getCountry();
+        if (null !== $country && '' !== $country) {
+            $buyer->setCountry($country);
         }
 
-        if (!empty($address->getCity())) {
-            $buyer->setCity($address->getCity());
+        $city = $address->getCity();
+        if (null !== $city && '' !== $city) {
+            $buyer->setCity($city);
         }
 
-        if (!empty($address->getPostcode())) {
-            $buyer->setZip($address->getPostcode());
+        $postcode = $address->getPostcode();
+        if (null !== $postcode && '' !== $postcode) {
+            $buyer->setZip($postcode);
         }
 
-        if (!empty($address->getEmail())) {
-            $buyer->setEmail($address->getEmail());
+        $email = $address->getEmail();
+        if (null !== $email && '' !== $email) {
+            $buyer->setEmail($email);
         }
-        
-        if (!empty($address->getTelephone())) {
-            $buyer->setPhone($address->getTelephone());
+
+        $telephone = $address->getTelephone();
+        if (null !== $telephone && '' !== $telephone) {
+            $buyer->setPhone($telephone);
         }
 
         $invoice->setBuyer($buyer);

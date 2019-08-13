@@ -19,17 +19,27 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
      */
     public function indexAction()
     {
+        if (!ini_get('allow_url_fopen')) {
+            ini_set('allow_url_fopen', true);
+        }
+
+        $raw_post_data = file_get_contents('php://input');
+
+        if ($raw_post_data === false) {
+            throw new Exception('Could not read from the php://input stream or invalid Bitpay IPN received.');
+        }
+
         Mage::helper('bitpay')->registerAutoloader();
         Mage::helper('bitpay')->debugData(
             array(
                 sprintf('Incoming IPN from bitpay'),
                 getallheaders(),
-                file_get_contents('php://input'),
+                $raw_post_data,
             )
         );
 
         // Magento doesn't seem to have a way to get the Request body
-        $ipn              = json_decode(file_get_contents('php://input'));
+        $ipn              = json_decode($raw_post_data);
         $ipn->posData     = is_string($ipn->posData) ? json_decode($ipn->posData) : $ipn->posData;
         $ipn->buyerFields = isset($ipn->buyerFields) ? $ipn->buyerFields : new stdClass();
         Mage::helper('bitpay')->debugData($ipn);

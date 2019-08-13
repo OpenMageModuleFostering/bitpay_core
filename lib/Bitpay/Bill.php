@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License 
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
@@ -73,7 +73,7 @@ class Bill implements BillInterface
     protected $showRate;
 
     /**
-     * @var string
+     * @var boolean
      */
     protected $archived;
 
@@ -366,9 +366,7 @@ class Bill implements BillInterface
      */
     public function setArchived($archived)
     {
-        if (!empty($archived) && is_bool($archived)) {
-            $this->archived = $archived;
-        }
+        $this->archived = (boolean) $archived;
 
         return $this;
     }

@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License 
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
@@ -36,7 +36,7 @@ interface CurrencyInterface
     public function getExchangePctFee();
 
     /**
-     * @return string
+     * @return boolean
      */
     public function isPayoutEnabled();
 
@@ -51,12 +51,12 @@ interface CurrencyInterface
     public function getPluralName();
 
     /**
-     * @return string
+     * @return array
      */
     public function getAlts();
 
     /**
-     * @return string
+     * @return array
      */
     public function getPayoutFields();
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License 
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
@@ -15,7 +15,6 @@ use Bitpay\Client\Response;
  *
  * @TODO add way to configure curl with options
  *
- * @codeCoverageIgnore
  * @package Bitpay
  */
 class CurlAdapter implements AdapterInterface
@@ -35,6 +34,7 @@ class CurlAdapter implements AdapterInterface
                 CURLOPT_TIMEOUT        => 10,
                 CURLOPT_SSL_VERIFYPEER => 1,
                 CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_CAINFO         => __DIR__.'/ca-bundle.crt',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FORBID_REUSE   => 1,
                 CURLOPT_FRESH_CONNECT  => 1,
@@ -52,8 +52,16 @@ class CurlAdapter implements AdapterInterface
             );
         }
 
+        $raw = curl_exec($curl);
+
+        if (false === $raw) {
+            $errorMessage = curl_error($curl);
+            curl_close($curl);
+            throw new \Exception($errorMessage);
+        }
+
         /** @var ResponseInterface */
-        $response = Response::createFromRawResponse(curl_exec($curl));
+        $response = Response::createFromRawResponse($raw);
 
         curl_close($curl);
 

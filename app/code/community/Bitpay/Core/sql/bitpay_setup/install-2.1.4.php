@@ -6,7 +6,7 @@
 $this->startSetup();
 
 /**
- * IPN Log Table, used to keep track of incoiming IPNs
+ * IPN Log Table, used to keep track of incoming IPNs
  */
 $this->run(sprintf('DROP TABLE IF EXISTS `%s`;', $this->getTable('bitpay/ipn')));
 $ipnTable = new Varien_Db_Ddl_Table();

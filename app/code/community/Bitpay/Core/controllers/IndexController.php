@@ -21,8 +21,6 @@ class Bitpay_Core_IndexController extends Mage_Core_Controller_Front_Action
             Mage::helper('bitpay')->debugData(
                 $params
             );
-            //$quoteId = $params['quote'];
-            //$paid    = Mage::getModel('bitpay/ipn')->getQuotePaid($quoteId);
         }
 
         $this->loadLayout();

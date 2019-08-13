@@ -99,9 +99,6 @@ class Util
      */
     public static function twoSha256($data, $binary = false)
     {
-        //$pass1 = self::sha256(hex2bin($data), true);
-        //$pass2 = strrev(bin2hex(self::sha256($pass1, true)));
-
         return self::sha256(self::sha256($data, $binary), $binary);
     }
 
@@ -195,8 +192,11 @@ class Util
         }
 
         $tmp = self::decToBin($hex);
+
         $n   = strlen($tmp) - 1;
+        $old = 11;
         $S   = new Point(PointInterface::INFINITY, PointInterface::INFINITY);
+        $gmpS = new Point(PointInterface::INFINITY, PointInterface::INFINITY);
 
         while ($n >= 0) {
             $S = self::pointDouble($S);
@@ -285,7 +285,9 @@ class Util
             $ymul   = Math::mul($s, $ysub);
             $ysub2  = Math::sub(0, $point->getY());
             $yadd   = Math::add($ysub2, $ymul);
+
             $R['y'] = Math::mod($yadd, $p);
+
         } catch (\Exception $e) {
             throw new \Exception('Error in Util::pointDouble(): '.$e->getMessage());
         }
@@ -400,36 +402,5 @@ class Util
         }
 
         return strrev($byte);
-    }
-
-    /**
-     * y^2 (mod p) = x^3 + ax + b (mod p)
-     *
-     * @param PointInterface          $point
-     * @param CurveParameterInterface $parameters
-     */
-    public static function pointTest(PointInterface $point, CurveParameterInterface $parameters = null)
-    {
-        if (null === $parameters) {
-            $parameters = new Secp256k1();
-        }
-
-        // y^2
-        $y2 = Math::pow($point->getY(), 2);
-        // x^3
-        $x3 = Math::pow($point->getX(), 3);
-        // ax
-        $ax = Math::mul($parameters->aHex(), $point->getX());
-
-        $left  = Math::mod($y2, $parameters->pHex());
-        $right = Math::mod(
-            Math::add(
-                Math::add($x3, $ax),
-                $parameters->bHex()
-            ),
-            $parameters->pHex()
-        );
-
-        return ($left == $right);
     }
 }

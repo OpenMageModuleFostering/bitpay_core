@@ -107,7 +107,7 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
         $state = Mage::getStoreConfig(sprintf('payment/bitpay/invoice_%s', $invoice->getStatus()));
         $order->addStatusToHistory(
             $state,
-            sprintf('Incoming IPN status "%s" updateded order state to "%s"', $invoice->getStatus(), $state)
+            sprintf('Incoming IPN status "%s" updated order state to "%s"', $invoice->getStatus(), $state)
         )->save();
     }
 }

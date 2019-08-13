@@ -46,36 +46,49 @@ class BcEngine implements EngineInterface
     }
 
     /**
-     * @param String $a is number to be inverted
-     * @param String $b is Modulus
+     * Finds inverse number $inv for $num by modulus $mod, such as:
+     *     $inv * $num = 1 (mod $mod)
+     *
+     * @param string $num
+     * @param string $mod
+     * @return string
+     * @access public
      */
-    public function invertm($a, $b)
+    public function invertm($num, $mod)
     {
-        $number = $this->input($a);
-        $modulus = $this->input($b);
-        if (!$this->coprime($number, $modulus)) {
-            return '0';
-        }
-        $a = '1';
-        $b = '0';
-        $z = '0';
-        $c = '0';
-        $mod = $modulus;
-        $num = $number;
+        $num = $this->input($num);
+        $mod = $this->input($mod);
+
+        $x = '1';
+        $y = '0';
+        $num1 = $mod;
+
         do {
-            $z = bcmod($num, $mod);
-            $c = bcdiv($num, $mod);
-            $mod = $z;
-            $z = bcsub($a, bcmul($b, $c));
-            $num = $mod;
-            $a = $b;
-            $b = $z;
-        } while (bccomp($mod, '0') > 0);
-        if (bccomp($a, '0') < 0) {
-            $a = bcadd($a, $modulus);
+            $tmp = bcmod($num, $num1);
+
+            $q = bcdiv($num, $num1);
+
+            $num = $num1;
+
+            $num1 = $tmp;
+
+            $tmp = bcsub($x, bcmul($y, $q));
+
+            $x = $y;
+
+            $y = $tmp;
+
+        } while (bccomp($num1, '0'));
+
+        if (bccomp($x, '0') < 0) {
+            $x = bcadd($x, $mod);
         }
 
-        return (string) $a;
+        if (substr($num, 0, 1) === '-') {
+            $x = bcsub($mod, $x);
+        }
+
+        return $x;
     }
 
     /**
@@ -126,21 +139,29 @@ class BcEngine implements EngineInterface
         return bcsub($a, $b);
     }
 
-    private function input($x)
+    public function input($x)
     {
-        if (is_string($x) && strtolower(substr($x, 0, 2)) == '0x') {
-            $hex = strtolower($x);
-            $hex = substr($hex, 2);
+        if (empty($x)) {
+            return '0';
+        }
+        $x = strtolower(trim($x));
+        if (preg_match('/^(-?)0x([0-9a-f]+)$/', $x, $matches)) {
+            $sign = $matches[1];
+            $hex = $matches[2];
 
             for ($dec = '0', $i = 0; $i < strlen($hex); $i++) {
                 $current = strpos('0123456789abcdef', $hex[$i]);
                 $dec     = bcadd(bcmul($dec, 16), $current);
             }
 
-            return $dec;
+            return $sign.$dec;
+
+        } elseif (preg_match('/^-?[0-9]+$/', $x)) {
+            return $x;
+        } else {
+            throw new \Exception("The input must be a numeric string in decimal or hexadecimal (with leading 0x) format.\n".var_export($x, false));
         }
 
-        return $x;
     }
 
     /**

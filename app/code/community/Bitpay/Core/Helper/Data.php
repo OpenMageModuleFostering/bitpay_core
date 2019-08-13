@@ -118,11 +118,15 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
             sprintf('Sending Pairing Request for SIN "%s"', (string) $sin)
         );
 
+        // Sanitize label
+        $label = preg_replace('/[^a-zA-Z0-9 \-\_\.]/', '', Mage::app()->getStore()->getName());
+        $label = substr('Magento - '.$label, 0, 59);
+
         $token = $this->getBitpayClient()->createToken(
             array(
                 'id'          => (string) $sin,
                 'pairingCode' => $pairingCode,
-                'label'       => sprintf('[Magento Store] %s', Mage::app()->getStore()->getName()),
+                'label'       => $label,
             )
         );
 

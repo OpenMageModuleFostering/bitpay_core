@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2014 BitPay Inc., MIT License 
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
@@ -25,5 +25,10 @@ class Livenet implements NetworkInterface
     public function getApiHost()
     {
         return 'bitpay.com';
+    }
+
+    public function getApiPort()
+    {
+        return 443;
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2014 BitPay Inc., MIT License 
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
@@ -33,4 +33,11 @@ interface NetworkInterface
      * @return string
      */
     public function getApiHost();
+
+    /**
+     * The port of the host
+     *
+     * @return integer
+     */
+    public function getApiPort();
 }

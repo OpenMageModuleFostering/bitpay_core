@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2014 BitPay Inc., MIT License 
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
@@ -15,6 +15,7 @@ interface RequestInterface
     const METHOD_POST   = 'POST';
     const METHOD_GET    = 'GET';
     const METHOD_PUT    = 'PUT';
+    const METHOD_DELETE = 'DELETE';
 
     /**
      * Returns the method for this request

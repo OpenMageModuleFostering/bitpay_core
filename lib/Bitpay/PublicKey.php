@@ -1,14 +1,14 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2014 BitPay Inc., MIT License 
  * see https://github.com/bitpay/php-bitpay-client/blob/master/LICENSE
  */
 
 namespace Bitpay;
 
+use Bitpay\Math\Math;
 use Bitpay\Util\Secp256k1;
 use Bitpay\Util\Util;
-use Bitpay\Math\Math;
 
 /**
  * @package Bitcore
@@ -125,7 +125,7 @@ class PublicKey extends Key
      */
     public function isValid()
     {
-        return ((!empty($this->hex) && !ctype_xdigit($this->hex)) && (!empty($this->dec) && !ctype_digit($this->dec)));
+        return ((!empty($this->hex) && ctype_xdigit($this->hex)) && (!empty($this->dec) && ctype_digit($this->dec)));
     }
 
     /**

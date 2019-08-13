@@ -27,7 +27,7 @@ class Math
             } elseif (extension_loaded('bcmath')) {
                 static::$engine = new BcEngine();
             } else {
-                static::$engine = new RpEngine();
+                throw new \Exception('The GMP or BCMATH extension for PHP is required.');
             }
         }
 

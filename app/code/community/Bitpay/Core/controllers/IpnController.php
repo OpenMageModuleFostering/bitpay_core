@@ -69,7 +69,13 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
             )
         )->save();
 
-        $order = \Mage::getModel('sales/order')->loadByIncrementId($ipn->posData->id);
+
+        // Order isn't being created for iframe...
+        if (isset($ipn->posData->orderId)) {
+            $order = \Mage::getModel('sales/order')->loadByIncrementId($ipn->posData->orderId);
+        } else {
+            $order = \Mage::getModel('sales/order')->load($ipn->posData->quoteId, 'quote_id');
+        }
 
         if (false === isset($order) || true === empty($order->getId())) {
             \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_IpnController::indexAction(), Invalid Bitpay IPN received.');

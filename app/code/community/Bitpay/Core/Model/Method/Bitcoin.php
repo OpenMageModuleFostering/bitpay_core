@@ -35,8 +35,24 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
      * @param  float                           $amount
      * @return Bitpay_Core_Model_PaymentMethod
      */
-    public function authorize(Varien_Object $payment, $amount)
+    public function authorize(Varien_Object $payment, $amount, $iframe = false)
     {
+        // Check if coming from iframe or submit button
+        if ((!Mage::getStoreConfig('payment/bitpay/fullscreen') && $iframe === false) 
+            || (Mage::getStoreConfig('payment/bitpay/fullscreen') && $iframe === true)) {
+            $quoteId = $payment->getOrder()->getQuoteId();
+            $ipn     = Mage::getModel('bitpay/ipn');
+
+            if (!$ipn->GetQuotePaid($quoteId))
+            {
+                // This is the error that is displayed to the customer during checkout.
+                Mage::throwException("Order not paid for.  Please pay first and then Place your Order.");
+                Mage::log('Order not paid for. Please pay first and then Place Your Order.', Zend_Log::CRIT, Mage::helper('bitpay')->getLogFile());
+            }
+
+            return $this;
+        }
+
         if (false === isset($payment) || false === isset($amount) || true === empty($payment) || true === empty($amount)) {
             $this->debugData('[ERROR] In Bitpay_Core_Model_Method_Bitcoin::authorize(): missing payment or amount parameters.');
             throw new \Exception('In Bitpay_Core_Model_Method_Bitcoin::authorize(): missing payment or amount parameters.');
@@ -61,7 +77,7 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             \Mage::throwException('In Bitpay_Core_Model_Method_Bitcoin::authorize(): Could not authorize transaction.');
         }
 
-        self::$_redirectUrl = $bitpayInvoice->getUrl();
+        self::$_redirectUrl = (Mage::getStoreConfig('payment/bitpay/fullscreen')) ? $bitpayInvoice->getUrl(): $bitpayInvoice->getUrl().'&view=iframe';
 
         $this->debugData(
             array(
@@ -70,10 +86,13 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             )
         );
 
+        $quote = Mage::getSingleton('checkout/session')->getQuote();
+        $order = \Mage::getModel('sales/order')->load($quote->getId(), 'quote_id');
+
         // Save BitPay Invoice in database for reference
         $mirrorInvoice = \Mage::getModel('bitpay/invoice')
             ->prepareWithBitpayInvoice($bitpayInvoice)
-            ->prepateWithOrder($payment->getOrder())
+            ->prepareWithOrder(array('increment_id' => $order->getIncrementId(), 'quote_id'=> $quote->getId()))
             ->save();
 
         $this->debugData('[INFO] Leaving Bitpay_Core_Model_Method_Bitcoin::authorize(): invoice id ' . $bitpayInvoice->getId());
@@ -200,6 +219,7 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
         $this->debugData('[INFO] In Bitpay_Core_Model_Method_Bitcoin::getOrderPlaceRedirectUrl(): $_redirectUrl is ' . self::$_redirectUrl);
 
         return self::$_redirectUrl;
+        
     }
 
     /**
@@ -247,12 +267,22 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             $this->debugData('[INFO] In Bitpay_Core_Model_Method_Bitcoin::prepareInvoice(): entered function with good invoice, payment and amount parameters.');
         }
 
-        $invoice->setOrderId($payment->getOrder()->getIncrementId());
-        $invoice->setPosData(json_encode(array('id' => $payment->getOrder()->getIncrementId())));
+        $quote = Mage::getSingleton('checkout/session')->getQuote();
+        $order = \Mage::getModel('sales/order')->load($quote->getId(), 'quote_id');
 
-        $invoice = $this->addCurrencyInfo($invoice, $payment->getOrder());
+        if (Mage::getStoreConfig('payment/bitpay/fullscreen')) {
+            $invoice->setOrderId($order->getIncrementId());
+            $invoice->setPosData(json_encode(array('orderId' => $order->getIncrementId())));
+        } else {
+            $invoice->setOrderId($quote->getId());
+            $invoice->setPosData(json_encode(array('quoteId' => $quote->getId())));
+            $convertQuote = Mage::getSingleton('sales/convert_quote');
+            $order = $convertQuote->toOrder($quote);
+        }
+
+        $invoice = $this->addCurrencyInfo($invoice, $order);
         $invoice = $this->addPriceInfo($invoice, $amount);
-        $invoice = $this->addBuyerInfo($invoice, $payment->getOrder());
+        $invoice = $this->addBuyerInfo($invoice, $order);
 
         return $invoice;
     }
@@ -280,8 +310,55 @@ class Bitpay_Core_Model_Method_Bitcoin extends Mage_Payment_Model_Method_Abstrac
             throw new \Exception('In Bitpay_Core_Model_Method_Bitcoin::addBuyerInfo(): could not construct new BitPay buyer object.');
         }
 
+
         $buyer->setFirstName($order->getCustomerFirstname());
         $buyer->setLastName($order->getCustomerLastname());
+
+
+        if (Mage::getStoreConfig('payment/bitpay/fullscreen')) {
+            $address = $order->getBillingAddress();
+        } else {
+            $quote = Mage::getSingleton('checkout/session')->getQuote();
+            $address = $quote->getBillingAddress();
+        }
+        
+        if (!empty($address->getStreet1())) {
+            $buyer->setAddress(
+                array(
+                    $address->getStreet1(),
+                    $address->getStreet2(),
+                    $address->getStreet3(),
+                    $address->getStreet4()
+                    )
+                );
+        }
+
+        if (!empty($address->getRegionCode())) {
+            $buyer->setState($address->getRegionCode());
+        } else if (!empty($address->getRegion())) {
+            $buyer->setState($address->getRegion());
+        }
+
+        if (!empty($address->getCountry())) {
+            $buyer->setCountry($address->getCountry());
+        }
+
+        if (!empty($address->getCity())) {
+            $buyer->setCity($address->getCity());
+        }
+
+        if (!empty($address->getPostcode())) {
+            $buyer->setZip($address->getPostcode());
+        }
+
+        if (!empty($address->getEmail())) {
+            $buyer->setEmail($address->getEmail());
+        }
+        
+        if (!empty($address->getTelephone())) {
+            $buyer->setPhone($address->getTelephone());
+        }
+
         $invoice->setBuyer($buyer);
 
         return $invoice;

@@ -57,17 +57,17 @@ class Bitpay_Core_Model_Invoice extends Mage_Core_Model_Abstract
      * @param Mage_Sales_Model_Order $order
      * @return Bitpay_Core_Model_Invoice
      */
-    public function prepateWithOrder($order)
+    public function prepareWithOrder($order)
     {
         if (false === isset($order) || true === empty($order)) {
             \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Model_Invoice::prepateWithOrder(): Missing or empty $order parameter.');
             throw new \Exception('In Bitpay_Core_Model_Invoice::prepateWithOrder(): Missing or empty $order parameter.');
         }
-
+        
         $this->addData(
             array(
-                'quote_id'     => $order->getQuoteId(),
-                'increment_id' => $order->getIncrementId(),
+                'quote_id'     => $order['quote_id'],
+                'increment_id' => $order['increment_id'],
             )
         );
 

@@ -60,9 +60,9 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
                 'btc_price'        => isset($ipn->btcPrice) ? $ipn->btcPrice : '',
                 'price'            => isset($ipn->price) ? $ipn->price : '',
                 'currency'         => isset($ipn->currency) ? $ipn->currency : '',
-                'invoice_time'     => isset($ipn->invoiceTime) ? $ipn->invoiceTime : '',
-                'expiration_time'  => isset($ipn->expirationTime) ? $ipn->expirationTime : '',
-                'current_time'     => isset($ipn->currentTime) ? $ipn->currentTime : '',
+                'invoice_time'     => isset($ipn->invoiceTime) ? intval($ipn->invoiceTime / 1000) : '',
+                'expiration_time'  => isset($ipn->expirationTime) ? intval($ipn->expirationTime / 1000) : '',
+                'current_time'     => isset($ipn->currentTime) ? intval($ipn->currentTime / 1000) : '',
                 'btc_paid'         => isset($ipn->btcPaid) ? $ipn->btcPaid : '',
                 'rate'             => isset($ipn->rate) ? $ipn->rate : '',
                 'exception_status' => isset($ipn->exceptionStatus) ? $ipn->exceptionStatus : '',
@@ -103,7 +103,7 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
         // Update the order to notifiy that it has been paid
         if (true === in_array($invoice->getStatus(), array('paid', 'confirmed', 'complete'))) {
             $payment = \Mage::getModel('sales/order_payment')->setOrder($order);
-            
+
             if (true === isset($payment) && false === empty($payment)) {
                 $payment->registerCaptureNotification($invoice->getPrice());
                 $order->addPayment($payment);

@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2015 BitPay Inc., MIT License
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
  */
 
@@ -39,9 +39,9 @@ class Bitpay_Core_Model_Invoice extends Mage_Core_Model_Abstract
                 'price'            => $invoice->getPrice(),
                 'currency'         => $invoice->getCurrency()->getCode(),
                 'order_id'         => $invoice->getOrderId(),
-                'invoice_time'     => $invoice->getInvoiceTime(),
-                'expiration_time'  => $invoice->getExpirationTime(),
-                'current_time'     => $invoice->getCurrentTime(),
+                'invoice_time'     => intval($invoice->getInvoiceTime() / 1000),
+                'expiration_time'  => intval($invoice->getExpirationTime() / 1000),
+                'current_time'     => intval($invoice->getCurrentTime() / 1000),
                 'btc_paid'         => $invoice->getBtcPaid(),
                 'rate'             => $invoice->getRate(),
                 'exception_status' => $invoice->getExceptionStatus(),

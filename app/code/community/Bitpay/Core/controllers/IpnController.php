@@ -60,30 +60,18 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
                 'btc_price'        => isset($ipn->btcPrice) ? $ipn->btcPrice : '',
                 'price'            => isset($ipn->price) ? $ipn->price : '',
                 'currency'         => isset($ipn->currency) ? $ipn->currency : '',
-                'invoice_time'     => isset($ipn->invoiceTime) ? intval($ipn->invoiceTime / 1000) : '',
-                'expiration_time'  => isset($ipn->expirationTime) ? intval($ipn->expirationTime / 1000) : '',
-                'current_time'     => isset($ipn->currentTime) ? intval($ipn->currentTime / 1000) : '',
+                'invoice_time'     => isset($ipn->invoiceTime) ? $ipn->invoiceTime : '',
+                'expiration_time'  => isset($ipn->expirationTime) ? $ipn->expirationTime : '',
+                'current_time'     => isset($ipn->currentTime) ? $ipn->currentTime : '',
                 'btc_paid'         => isset($ipn->btcPaid) ? $ipn->btcPaid : '',
                 'rate'             => isset($ipn->rate) ? $ipn->rate : '',
                 'exception_status' => isset($ipn->exceptionStatus) ? $ipn->exceptionStatus : '',
             )
         )->save();
 
+        $order = \Mage::getModel('sales/order')->loadByIncrementId($ipn->posData->id);
 
-        // Order isn't being created for iframe...
-        if (isset($ipn->posData->orderId)) {
-            $order = \Mage::getModel('sales/order')->loadByIncrementId($ipn->posData->orderId);
-        } else {
-            $order = \Mage::getModel('sales/order')->load($ipn->posData->quoteId, 'quote_id');
-        }
-
-        if (false === isset($order) || true === empty($order)) {
-            \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_IpnController::indexAction(), Invalid Bitpay IPN received.');
-            \Mage::throwException('Invalid Bitpay IPN received.');
-        }
-
-        $orderId = $order->getId();
-        if (false === isset($orderId) || true === empty($orderId)) {
+        if (false === isset($order) || true === empty($order->getId())) {
             \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_IpnController::indexAction(), Invalid Bitpay IPN received.');
             \Mage::throwException('Invalid Bitpay IPN received.');
         }
@@ -113,12 +101,9 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
         }
 
         // Update the order to notifiy that it has been paid
-        $transactionSpeed = \Mage::getStoreConfig('payment/bitpay/speed');
-        if ($invoice->getStatus() === 'paid' 
-            || ($invoice->getStatus() === 'confirmed' && $transactionSpeed === 'high')) {
-
+        if (true === in_array($invoice->getStatus(), array('paid', 'confirmed', 'complete'))) {
             $payment = \Mage::getModel('sales/order_payment')->setOrder($order);
-
+            
             if (true === isset($payment) && false === empty($payment)) {
                 $payment->registerCaptureNotification($invoice->getPrice());
                 $order->addPayment($payment);
@@ -131,7 +116,6 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
                 }
 
                 $order->save();
-
             } else {
                 \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_IpnController::indexAction(), Could not create a payment object in the Bitpay IPN controller.');
                 \Mage::throwException('Could not create a payment object in the Bitpay IPN controller.');
@@ -143,28 +127,12 @@ class Bitpay_Core_IpnController extends Mage_Core_Controller_Front_Action
 
         if (false === isset($state) || true === empty($state)) {
             \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_IpnController::indexAction(), Could not retrieve the defined state parameter to update this order to in the Bitpay IPN controller.');
-            \Mage::throwException('Could not retrieve the defined state parameter to update this order in the Bitpay IPN controller.');
+            \Mage::throwException('Could not retrieve the defined state parameter to update this order to in the Bitpay IPN controller.');
         }
 
-        // Check if status should be updated
-        switch ($order->getStatus()) {
-            case Mage_Sales_Model_Order::STATE_CANCELED:
-            case Mage_Sales_Model_Order::STATUS_FRAUD: 
-            case Mage_Sales_Model_Order::STATE_CLOSED: 
-            case Mage_Sales_Model_Order::STATE_COMPLETE: 
-            case Mage_Sales_Model_Order::STATE_HOLDED:
-                // Do not Update 
-                break;
-            case Mage_Sales_Model_Order::STATE_PENDING_PAYMENT: 
-            case Mage_Sales_Model_Order::STATE_PROCESSING: 
-            default:
-                $order->addStatusToHistory(
-                    $state,
-                    sprintf('[INFO] In Bitpay_Core_IpnController::indexAction(), Incoming IPN status "%s" updated order state to "%s"', $invoice->getStatus(), $state)
-                )->save();
-                break;
-        }
-
-
+        $order->addStatusToHistory(
+            $state,
+            sprintf('[INFO] In Bitpay_Core_IpnController::indexAction(), Incoming IPN status "%s" updated order state to "%s"', $invoice->getStatus(), $state)
+        )->save();
     }
 }

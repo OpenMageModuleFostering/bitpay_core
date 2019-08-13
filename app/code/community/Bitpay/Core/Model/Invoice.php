@@ -1,6 +1,6 @@
 <?php
 /**
- * @license Copyright 2011-2015 BitPay Inc., MIT License
+ * @license Copyright 2011-2014 BitPay Inc., MIT License
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
  */
 
@@ -39,9 +39,9 @@ class Bitpay_Core_Model_Invoice extends Mage_Core_Model_Abstract
                 'price'            => $invoice->getPrice(),
                 'currency'         => $invoice->getCurrency()->getCode(),
                 'order_id'         => $invoice->getOrderId(),
-                'invoice_time'     => intval($invoice->getInvoiceTime() / 1000),
-                'expiration_time'  => intval($invoice->getExpirationTime() / 1000),
-                'current_time'     => intval($invoice->getCurrentTime() / 1000),
+                'invoice_time'     => $invoice->getInvoiceTime(),
+                'expiration_time'  => $invoice->getExpirationTime(),
+                'current_time'     => $invoice->getCurrentTime(),
                 'btc_paid'         => $invoice->getBtcPaid(),
                 'rate'             => $invoice->getRate(),
                 'exception_status' => $invoice->getExceptionStatus(),
@@ -57,17 +57,17 @@ class Bitpay_Core_Model_Invoice extends Mage_Core_Model_Abstract
      * @param Mage_Sales_Model_Order $order
      * @return Bitpay_Core_Model_Invoice
      */
-    public function prepareWithOrder($order)
+    public function prepateWithOrder($order)
     {
         if (false === isset($order) || true === empty($order)) {
             \Mage::helper('bitpay')->debugData('[ERROR] In Bitpay_Core_Model_Invoice::prepateWithOrder(): Missing or empty $order parameter.');
             throw new \Exception('In Bitpay_Core_Model_Invoice::prepateWithOrder(): Missing or empty $order parameter.');
         }
-        
+
         $this->addData(
             array(
-                'quote_id'     => $order['quote_id'],
-                'increment_id' => $order['increment_id'],
+                'quote_id'     => $order->getQuoteId(),
+                'increment_id' => $order->getIncrementId(),
             )
         );
 

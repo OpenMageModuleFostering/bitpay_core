@@ -13,15 +13,6 @@ class BcEngine implements EngineInterface
      * @param String $a Numeric String
      * @param String $b Numeric String
      */
-    public function __construct()
-    {
-        bcscale(0);
-    }
-
-    /**
-     * @param String $a Numeric String
-     * @param String $b Numeric String
-     */
     public function add($a, $b)
     {
         $a = $this->input($a);

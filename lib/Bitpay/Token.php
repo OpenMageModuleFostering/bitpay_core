@@ -37,16 +37,6 @@ class Token implements TokenInterface
     protected $policies;
 
     /**
-     * @var string
-     */
-    protected $pairingCode;
-
-    /**
-     * @var \DateTime
-     */
-    protected $pairingExpiration;
-
-    /**
      */
     public function __construct()
     {
@@ -114,7 +104,7 @@ class Token implements TokenInterface
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTime $createdAt)
+    public function setCreatedAt($createdAt)
     {
         $this->createdAt = $createdAt;
 
@@ -132,36 +122,6 @@ class Token implements TokenInterface
     public function setPolicies($policies)
     {
         $this->policies = $policies;
-
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPairingCode()
-    {
-        return $this->pairingCode;
-    }
-    
-    public function setPairingCode($pairingCode)
-    {
-        $this->pairingCode = $pairingCode;
-        
-        return $this;
-    }
-
-    /**
-     * @return \DateTime
-     */
-    public function getPairingExpiration()
-    {
-        return $this->pairingExpiration;
-    }
-
-    public function setPairingExpiration(\DateTime $pairingExpiration)
-    {
-        $this->pairingExpiration = $pairingExpiration;
 
         return $this;
     }

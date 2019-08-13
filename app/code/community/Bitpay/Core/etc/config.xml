@@ -8,7 +8,7 @@
 <config>
     <modules>
         <Bitpay_Core>
-            <version>2.1.9</version>
+            <version>2.0.1</version>
         </Bitpay_Core>
     </modules>
 
@@ -118,7 +118,6 @@
                 <notification_url>bitpay/ipn</notification_url>
                 <redirect_url>checkout/onepage/success</redirect_url>
                 <speed>medium</speed>
-                <fullscreen>0</fullscreen>
                 <invoice_new>new</invoice_new>
                 <invoice_paid>processing</invoice_paid>
                 <invoice_confirmed>processing</invoice_confirmed>

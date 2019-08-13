@@ -35,14 +35,4 @@ interface TokenInterface
      * @return array
      */
     public function getPolicies();
-    
-    /**
-     * @return string
-     */
-    public function getPairingCode();
-
-    /**
-     * @return \DateTime
-     */
-    public function getPairingExpiration();
 }

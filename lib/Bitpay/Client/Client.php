@@ -156,12 +156,8 @@ class Client implements ClientInterface
         $this->response = $this->sendRequest($request);
 
         $body = json_decode($this->response->getBody(), true);
-        $error_message = false;
-        $error_message = (!empty($body['error'])) ? $body['error'] : $error_message;
-        $error_message = (!empty($body['errors'])) ? $body['errors'] : $error_message;
-        $error_message = (is_array($error_message)) ? implode("\n", $error_message) : $error_message;
-        if (false !== $error_message) {
-            throw new \Exception($error_message);
+        if (isset($body['error']) || isset($body['errors'])) {
+            throw new \Exception('Error with request');
         }
         $data = $body['data'];
         $invoice
@@ -191,7 +187,7 @@ class Client implements ClientInterface
         $this->response = $this->sendRequest($this->request);
         $body           = json_decode($this->response->getBody(), true);
         if (empty($body['data'])) {
-            throw new \Exception('Error with request: no data returned');
+            throw new \Exception('Error with request');
         }
         $currencies = $body['data'];
         array_walk($currencies, function (&$value, $key) {
@@ -261,12 +257,8 @@ class Client implements ClientInterface
         $this->request  = $request;
         $this->response = $this->sendRequest($request);
         $body = json_decode($this->response->getBody(), true);
-        $error_message = false;
-        $error_message = (!empty($body['error'])) ? $body['error'] : $error_message;
-        $error_message = (!empty($body['errors'])) ? $body['errors'] : $error_message;
-        $error_message = (is_array($error_message)) ? implode("\n", $error_message) : $error_message;
-        if (false !== $error_message) {
-            throw new \Exception($error_message);
+        if (isset($body['error']) || isset($body['errors'])) {
+            throw new \Exception('Error with request');
         }
 
         $data = $body['data'];
@@ -301,12 +293,8 @@ class Client implements ClientInterface
         $this->request  = $request;
         $this->response = $this->sendRequest($this->request);
         $body           = json_decode($this->response->getBody(), true);
-        $error_message = false;
-        $error_message = (!empty($body['error'])) ? $body['error'] : $error_message;
-        $error_message = (!empty($body['errors'])) ? $body['errors'] : $error_message;
-        $error_message = (is_array($error_message)) ? implode("\n", $error_message) : $error_message;
-        if (false !== $error_message) {
-            throw new \Exception($error_message);
+        if (isset($body['error']) || isset($body['errors'])) {
+            throw new \Exception('Error with request');
         }
 
         $payouts = array();
@@ -318,13 +306,11 @@ class Client implements ClientInterface
                 ->setAccountId($value['account'])
                 ->setCurrency(new \Bitpay\Currency($value['currency']))
                 ->setEffectiveDate($value['effectiveDate'])
-                ->setRequestdate($value['requestDate'])
                 ->setPricingMethod($value['pricingMethod'])
-                ->setStatus($value['status'])
-                ->setAmount($value['amount'])
-                ->setResponseToken($value['token'])
                 ->setRate(@$value['rate'])
-                ->setBtcAmount(@$value['btc'])
+                ->setRequestdate($value['requestDate'])
+                ->setStatus($value['status'])
+                ->setResponseToken($value['token'])
                 ->setReference(@$value['reference'])
                 ->setNotificationURL(@$value['notificationURL'])
                 ->setNotificationEmail(@$value['notificationEmail']);
@@ -374,7 +360,7 @@ class Client implements ClientInterface
 
         $body           = json_decode($this->response->getBody(), true);
         if (empty($body['data'])) {
-            throw new \Exception('Error with request: no data returned');
+            throw new \Exception('Error with request');
         }
 
         $data   = $body['data'];
@@ -400,7 +386,7 @@ class Client implements ClientInterface
 
         $body           = json_decode($this->response->getBody(), true);
         if (empty($body['data'])) {
-            throw new \Exception('Error with request: no data returned');
+            throw new \Exception('Error with request');
         }
         $data   = $body['data'];
 
@@ -410,9 +396,6 @@ class Client implements ClientInterface
             ->setAccountId($data['account'])
             ->setStatus($data['status'])
             ->setCurrency(new \Bitpay\Currency($data['currency']))
-            ->setRate(@$data['rate'])
-            ->setAmount($data['amount'])
-            ->setBtcAmount(@$data['btc'])
             ->setPricingMethod(@$data['pricingMethod'])
             ->setReference(@$data['reference'])
             ->setNotificationEmail(@$data['notificationEmail'])
@@ -462,7 +445,7 @@ class Client implements ClientInterface
         $this->response = $this->sendRequest($this->request);
         $body           = json_decode($this->response->getBody(), true);
         if (empty($body['data'])) {
-            throw new \Exception('Error with request: no data returned');
+            throw new \Exception('Error with request');
         }
 
         $tokens = array();
@@ -486,8 +469,10 @@ class Client implements ClientInterface
      */
     public function createToken(array $payload = array())
     {
-        if (isset($payload['pairingCode']) && 1 !== preg_match('/^[a-zA-Z0-9]{7}$/', $payload['pairingCode'])) {
-            throw new ArgumentException("pairing code is not legal");
+        if ($payload !== array()) {
+            if (1 !== preg_match('/^[a-zA-Z0-9]{7}$/', $payload['pairingCode'])) {
+                throw new ArgumentException("pairing code is not legal");
+            }
         }
 
         $this->request = $this->createNewRequest();
@@ -503,24 +488,14 @@ class Client implements ClientInterface
         }
 
         $tkn = $body['data'][0];
-        $createdAt = new \DateTime();
-        $pairingExpiration = new \DateTime();
 
         $token = new \Bitpay\Token();
         $token
             ->setPolicies($tkn['policies'])
+            ->setResource($tkn['resource'])
             ->setToken($tkn['token'])
             ->setFacade($tkn['facade'])
-            ->setCreatedAt($createdAt->setTimestamp(floor($tkn['dateCreated']/1000)));
-
-        if (isset($tkn['resource'])) {
-            $token->setResource($tkn['resource']);
-        }
-
-        if (isset($tkn['pairingCode'])) {
-            $token->setPairingCode($tkn['pairingCode']);
-            $token->setPairingExpiration($pairingExpiration->setTimestamp(floor($tkn['pairingExpiration']/1000)));
-        }
+            ->setCreatedAt($tkn['dateCreated']);
 
         return $token;
     }

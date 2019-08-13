@@ -1,6 +1,6 @@
-<?php 
+<?php
 /**
- * @license Copyright 2011-2014 BitPay Inc., MIT License
+ * @license Copyright 2011-2016 BitPay Inc., MIT License
  * @see https://github.com/bitpay/magento-plugin/blob/master/LICENSE
  */
 
@@ -18,7 +18,7 @@ switch($url) {
         echo 'Error creating invoice.  Please try again or try another payment solution.';
         break;
     default:
-        echo '<iframe src="'.$url.'" style="width:500px; height:150px; overflow:hidden; border:none; margin:auto; display:block;" scrolling="no" allowtransparency="true" frameborder="0"> </iframe>';
+        echo '<iframe class="bitpay_invoice_iframe" src="'.$url.'" style="width:500px; height:150px; overflow:hidden; border:none; margin:auto; display:none;" scrolling="no" allowtransparency="true" frameborder="0"> </iframe>';
         break;
 }
 $quoteId = $this->getQuote()->getId();
@@ -27,23 +27,64 @@ $url     = Mage::getUrl('bitpay/index/index/');
 if ($request->getScheme() == 'https') {
     $url = str_replace('http://', 'https://', $url);
 }
+
 ?>
 <script type="text/javascript">
 //<![CDATA[
-new PeriodicalExecuter(function() {
-    new Ajax.Request(
-        "<?php echo $url . '?quote=' . $quoteId; ?>",
-        {
-            asynchronous: true,
-            evalScripts: true, 
-            onComplete: function(request, json) {
-                var data = request.responseText.evalJSON(); 
-                if (data.paid) { 
-                    review.save();
-                } 
-            }
+if ($$('iframe.bitpay_invoice_iframe').length > 0) {
+  var bpListener = {
+    nextStep: function(transport) {
+      if (transport && transport.responseText) {
+        try{
+          response = eval('(' + transport.responseText + ')');
         }
-    );
-}, 5);
+        catch (e) {
+          response = {};
+        }
+        if (response.success) {
+          $$('iframe.bitpay_invoice_iframe')[0].setStyle({display:'block'});
+          $$('button.btn-checkout')[0].setStyle({display:'none'});
+          var ipnPoller = new PeriodicalExecuter(function() {
+            new Ajax.Request("<?php echo $url . '?quote=' . $quoteId; ?>",
+              {
+                asynchronous: true,
+                evalScripts: true,
+                onComplete: function(request, json) {
+                var data = request.responseText.evalJSON();
+                if (data.paid) {
+                  ipnPoller.stop();
+                  review.nextStep(transport);
+                }
+              }
+            });
+          }, 5);
+        } else {
+          var msg = response.error_messages;
+          if (typeof(msg)=='object') {
+            msg = msg.join("\n");
+          }
+          if (msg) {
+            alert(msg);
+          }
+        }
+        if (response.update_section) {
+          $('checkout-'+response.update_section.name+'-load').update(response.update_section.html);
+        }
+        if (response.goto_section) {
+          checkout.gotoSection(response.goto_section, true);
+        }
+      }
+    }
+  };
+  var reviewCheck = new PeriodicalExecuter(function() {
+    if (review) {
+      reviewCheck.stop();
+      var originalSaveHandler = review.onSave;
+      review.onSave = bpListener.nextStep.bindAsEventListener(review);
+    }
+  }, 1);
+}
 //]]>
 </script>
+
+

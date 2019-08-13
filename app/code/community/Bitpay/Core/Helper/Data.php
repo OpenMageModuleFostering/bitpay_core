@@ -367,4 +367,12 @@ class Bitpay_Core_Helper_Data extends Mage_Core_Helper_Abstract
 
         return $token;
     }
+
+    /**
+     * @return string
+     */
+    public function getLogFile()
+    {
+        return "payment_bitpay.log";
+    }
 }

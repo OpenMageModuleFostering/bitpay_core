@@ -1,3 +1,8 @@
+# NOTICE
+This is a Community-supported project.
+
+If you are interested in becoming a maintainer of this project, please contact us at integrations@bitpay.com. Developers at BitPay will attempt to work along the new maintainers to ensure the project remains viable for the foreseeable future.
+
 # Description
 
 Bitcoin payment plugin for Magento using the bitpay.com service.
@@ -13,9 +18,10 @@ To get up and running with our plugin quickly, see the GUIDE here: https://githu
 
 **BitPay Support:**
 
+* Last Cart Version Tested: 1.9.2.1
 * [GitHub Issues](https://github.com/bitpay/magento-plugin/issues)
   * Open an issue if you are having issues with this plugin.
-* [Support](https://support.bitpay.com)
+* [Support](https://help.bitpay.com)
   * BitPay merchant support documentation
 
 **Magento Support:**

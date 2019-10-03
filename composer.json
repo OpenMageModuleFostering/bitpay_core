@@ -1,5 +1,5 @@
 {
-    "name": "OpenMageModuleFostering\/Bitpay_Core",
+    "name": "openmage-module-fostering\/bitpay_core",
     "type": "magento-module",
     "license": "MIT",
     "homepage": "",

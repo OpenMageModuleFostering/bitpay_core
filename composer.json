@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Bitpay_Core",
+    "name": "OpenMageModuleFostering\/Bitpay_Core",
     "type": "magento-module",
     "license": "MIT",
     "homepage": "",
     "description": "",
     "authors": [
-    {
-        "name": "Integrations Team",
-        "email": "support@bitpay.com"
-    }
-],
+        {
+            "name": "Integrations Team",
+            "email": "support@bitpay.com"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
